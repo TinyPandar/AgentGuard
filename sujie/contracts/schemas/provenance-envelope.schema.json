@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sujie.invalid/contracts/0.1/provenance-envelope.schema.json",
+  "title": "provenance-envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "artifact_id": {
+      "$ref": "#/$defs/id"
+    },
+    "content_ref": {
+      "$ref": "#/$defs/uri"
+    },
+    "content_hash": {
+      "$ref": "#/$defs/hash"
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/origin_type"
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "event_id": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "required": [
+        "type",
+        "source_id",
+        "event_id"
+      ]
+    },
+    "authority": {
+      "$ref": "#/$defs/authority"
+    },
+    "integrity": {
+      "$ref": "#/$defs/integrity"
+    },
+    "confidentiality": {
+      "$ref": "#/$defs/confidentiality"
+    },
+    "allowed_uses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/purpose"
+      },
+      "minItems": 0,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "forbidden_uses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/purpose"
+      },
+      "minItems": 0,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "parents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/id"
+      },
+      "minItems": 0,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "transformations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "type": {
+            "$ref": "#/$defs/transformation"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "mapping_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/uri"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "type",
+          "version",
+          "mapping_ref"
+        ]
+      },
+      "minItems": 0,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "source_spans": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/span"
+      },
+      "minItems": 0,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "created_at": {
+      "$ref": "#/$defs/utc"
+    }
+  },
+  "required": [
+    "schema_version",
+    "artifact_id",
+    "content_ref",
+    "content_hash",
+    "origin",
+    "authority",
+    "integrity",
+    "confidentiality",
+    "allowed_uses",
+    "forbidden_uses",
+    "parents",
+    "transformations",
+    "source_spans",
+    "created_at"
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "format": "sujie-id",
+      "pattern": "^(?:[0-7][0-9A-HJKMNP-TV-Z]{25}|[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?![\\s\\S])"
+    },
+    "uri": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 4096
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "origin_type": {
+      "type": "string",
+      "enum": [
+        "USER_MESSAGE",
+        "WEB_PAGE",
+        "DOCUMENT",
+        "SOURCE_CODE",
+        "TICKET",
+        "EMAIL",
+        "ISSUE",
+        "MCP_TOOL_DESCRIPTION",
+        "MCP_TOOL_RESULT",
+        "MEMORY",
+        "SUBAGENT_OUTPUT",
+        "CONTROL_PLANE"
+      ]
+    },
+    "authority": {
+      "type": "string",
+      "enum": [
+        "DATA_ONLY",
+        "USER_REQUEST",
+        "CONTROL_PLANE"
+      ]
+    },
+    "integrity": {
+      "type": "string",
+      "enum": [
+        "UNTRUSTED",
+        "VALIDATED",
+        "TRUSTED"
+      ]
+    },
+    "confidentiality": {
+      "type": "string",
+      "enum": [
+        "PUBLIC",
+        "INTERNAL",
+        "CONFIDENTIAL",
+        "SECRET"
+      ]
+    },
+    "purpose": {
+      "type": "string",
+      "enum": [
+        "READ",
+        "ANALYZE",
+        "QUOTE",
+        "STORE_EVIDENCE",
+        "WRITE_REPORT",
+        "AUTHORIZE",
+        "EXECUTE",
+        "CHANGE_POLICY",
+        "TRANSFER",
+        "DELEGATE"
+      ]
+    },
+    "transformation": {
+      "type": "string",
+      "enum": [
+        "COPY",
+        "SLICE",
+        "DECODE",
+        "CONCAT",
+        "UNICODE_NFKC_VIEW",
+        "VISIBLE_UNICODE_VIEW",
+        "SUMMARY",
+        "MODEL_REWRITE",
+        "SERIALIZE",
+        "SUBAGENT_PASS",
+        "MEMORY_RESTORE"
+      ]
+    },
+    "span": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_start": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "source_end": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "view_start": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "view_end": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        }
+      },
+      "required": [
+        "source_start",
+        "source_end",
+        "view_start",
+        "view_end"
+      ]
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z(?![\\s\\S])"
+    }
+  }
+}

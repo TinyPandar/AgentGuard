@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "artifact_id": "01K4M0AAAAAAAAAAAAAAA00007",
+  "content_ref": "evidence://fixture/alert",
+  "content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "origin": {
+    "type": "MCP_TOOL_RESULT",
+    "source_id": "evidence-server/read_alert",
+    "event_id": "01K4M0AAAAAAAAAAAAAAA00008"
+  },
+  "authority": "DATA_ONLY",
+  "integrity": "UNTRUSTED",
+  "confidentiality": "PUBLIC",
+  "allowed_uses": [
+    "READ",
+    "ANALYZE",
+    "QUOTE",
+    "STORE_EVIDENCE"
+  ],
+  "forbidden_uses": [
+    "AUTHORIZE",
+    "EXECUTE",
+    "CHANGE_POLICY"
+  ],
+  "parents": [],
+  "transformations": [],
+  "source_spans": [
+    {
+      "source_start": 0,
+      "source_end": 20,
+      "view_start": 0,
+      "view_end": 20
+    }
+  ],
+  "created_at": "2026-09-05T09:00:00Z",
+  "untrusted_override": "not allowed"
+}

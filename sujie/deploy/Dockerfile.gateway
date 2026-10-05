@@ -1,0 +1,26 @@
+ARG SUJIE_PYTHON_BASE=python:3.12-slim
+FROM ${SUJIE_PYTHON_BASE}
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/gateway-python/src
+WORKDIR /app
+
+COPY requirements.lock /app/requirements.lock
+COPY deploy/wheelhouse /wheelhouse
+ARG SUJIE_OFFLINE_BUILD=0
+RUN if [ "$SUJIE_OFFLINE_BUILD" = "1" ]; then \
+      python -m pip install --no-cache-dir --no-index --find-links=/wheelhouse \
+        -r /app/requirements.lock; \
+    else \
+      python -m pip install --no-cache-dir -r /app/requirements.lock; \
+    fi \
+    && rm -rf /wheelhouse
+
+COPY contracts /app/contracts
+COPY gateway-python /app/gateway-python
+COPY mcp-servers /app/mcp-servers
+RUN chmod -R a=rX /app/contracts /app/gateway-python /app/mcp-servers
+
+USER 65532:65532
+CMD ["python", "-m", "uvicorn", "sujie_gateway.api:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]

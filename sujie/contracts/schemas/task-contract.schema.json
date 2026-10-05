@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sujie.invalid/contracts/0.1/task-contract.schema.json",
+  "title": "task-contract",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "contract_id": {
+      "$ref": "#/$defs/id"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "principal_id": {
+      "$ref": "#/$defs/id"
+    },
+    "session_id": {
+      "$ref": "#/$defs/id"
+    },
+    "trusted_goal": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 8192
+    },
+    "workspace_roots": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/scope"
+      },
+      "minItems": 1,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "allowed_purposes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/purpose"
+      },
+      "minItems": 1,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "allowed_effects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "$ref": "#/$defs/effect_kind"
+          },
+          "resource": {
+            "$ref": "#/$defs/scope"
+          }
+        },
+        "required": [
+          "kind",
+          "resource"
+        ]
+      },
+      "minItems": 1,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "forbidden_effects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/effect_kind"
+      },
+      "minItems": 0,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tool_calls": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "network_calls": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "subagents": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        }
+      },
+      "required": [
+        "tool_calls",
+        "network_calls",
+        "subagents"
+      ]
+    },
+    "expires_at": {
+      "$ref": "#/$defs/utc"
+    },
+    "parent_contract_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/id"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "policy_snapshot_hash": {
+      "$ref": "#/$defs/hash"
+    },
+    "status": {
+      "$ref": "#/$defs/status"
+    }
+  },
+  "required": [
+    "schema_version",
+    "contract_id",
+    "version",
+    "principal_id",
+    "session_id",
+    "trusted_goal",
+    "workspace_roots",
+    "allowed_purposes",
+    "allowed_effects",
+    "forbidden_effects",
+    "budgets",
+    "expires_at",
+    "parent_contract_id",
+    "policy_snapshot_hash",
+    "status"
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "format": "sujie-id",
+      "pattern": "^(?:[0-7][0-9A-HJKMNP-TV-Z]{25}|[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?![\\s\\S])"
+    },
+    "scope": {
+      "type": "string",
+      "format": "resource-scope",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "purpose": {
+      "type": "string",
+      "enum": [
+        "READ",
+        "ANALYZE",
+        "QUOTE",
+        "STORE_EVIDENCE",
+        "WRITE_REPORT",
+        "AUTHORIZE",
+        "EXECUTE",
+        "CHANGE_POLICY",
+        "TRANSFER",
+        "DELEGATE"
+      ]
+    },
+    "effect_kind": {
+      "type": "string",
+      "enum": [
+        "file.read",
+        "file.write",
+        "credential.read",
+        "data.transfer",
+        "external.data_transfer",
+        "exec",
+        "git.push",
+        "agent.delegate",
+        "memory.read",
+        "memory.write"
+      ]
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z(?![\\s\\S])"
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ACTIVE",
+        "REVOKED",
+        "EXPIRED"
+      ]
+    }
+  }
+}

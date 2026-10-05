@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "approval_id": "01K4M0AAAAAAAAAAAAAAA00011",
+  "decision_id": "01K4M0AAAAAAAAAAAAAAA00010",
+  "approved_by": "01K4M0AAAAAAAAAAAAAAA00002",
+  "binding": {
+    "principal_id": "01K4M0AAAAAAAAAAAAAAA00002",
+    "session_id": "01K4M0AAAAAAAAAAAAAAA00003",
+    "subject_id": "01K4M0AAAAAAAAAAAAAAA00005",
+    "action_id": "01K4M0AAAAAAAAAAAAAAA00009",
+    "action_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "contract_id": "01K4M0AAAAAAAAAAAAAAA00001",
+    "contract_version": 1,
+    "contract_snapshot_hash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "grant_id": "01K4M0AAAAAAAAAAAAAAA00004",
+    "grant_snapshot_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "policy_snapshot_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "tool_identity": {
+      "server_id": "01K4M0AAAAAAAAAAAAAAA00006",
+      "tool_name": "write_report",
+      "tool_version_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "materialized_args_hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "input_content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "provenance_snapshot_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "status": "APPROVED",
+  "created_at": "2026-09-05T09:30:00Z",
+  "approved_at": "2026-09-05T09:31:00Z",
+  "expires_at": "2026-09-05T10:00:00Z",
+  "consumed": false
+}

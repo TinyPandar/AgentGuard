@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "action_id": "01K4M0AAAAAAAAAAAAAAA00009",
+  "subject_id": "01K4M0AAAAAAAAAAAAAAA00005",
+  "tool_identity": {
+    "server_id": "01K4M0AAAAAAAAAAAAAAA00006",
+    "tool_name": "write_report",
+    "tool_version_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "effect": {
+    "kind": "file.write",
+    "operation": "WRITE_REPORT",
+    "resources": [
+      "/workspace/case-001/output/report.txt"
+    ],
+    "destination_trust": "LOCAL",
+    "side_effect": true,
+    "reversible": true
+  },
+  "input_artifacts": [
+    "01K4M0AAAAAAAAAAAAAAA00007"
+  ],
+  "materialized_args_hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "contract_id": "01K4M0AAAAAAAAAAAAAAA00001",
+  "grant_id": "01K4M0AAAAAAAAAAAAAAA00004",
+  "untrusted_override": "not allowed"
+}

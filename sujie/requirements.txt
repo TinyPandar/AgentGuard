@@ -1,0 +1,7 @@
+jsonschema==4.26.0
+referencing==0.37.0
+rfc3986-validator==0.1.1
+PyYAML==6.0.2
+mcp==2.1.1
+langgraph==1.2.11
+fastapi==0.141.1

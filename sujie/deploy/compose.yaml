@@ -1,0 +1,14 @@
+name: sujie-m0
+services:
+  gateway-placeholder:
+    image: python:3.12-slim
+    profiles: ["m0"]
+    command: ["python", "-c", "print('Sujie M0 placeholder only; no gateway or tools implemented')"]
+    network_mode: none
+    read_only: true
+    user: "65532:65532"
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 16
+    mem_limit: 128m
+    restart: "no"

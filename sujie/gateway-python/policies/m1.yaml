@@ -1,0 +1,20 @@
+schema_version: "0.1"
+rules:
+  - id: allow_bounded_m1_action
+    effect: allow
+    when:
+      - field: runtime.prerequisites_passed
+        op: eq
+        value: true
+  - id: ask_external_transfer
+    effect: ask
+    when:
+      - field: runtime.prerequisites_passed
+        op: eq
+        value: true
+      - field: action.effect.kind
+        op: eq
+        value: data.transfer
+      - field: action.effect.destination_trust
+        op: in
+        value: [UNTRUSTED_EXTERNAL]

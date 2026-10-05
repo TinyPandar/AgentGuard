@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sujie.invalid/contracts/0.1/decision-record.schema.json",
+  "title": "decision-record",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "decision_id": {
+      "$ref": "#/$defs/id"
+    },
+    "action_id": {
+      "$ref": "#/$defs/id"
+    },
+    "decision": {
+      "$ref": "#/$defs/decision"
+    },
+    "hard_block": {
+      "type": "boolean"
+    },
+    "risk": {
+      "$ref": "#/$defs/risk"
+    },
+    "uncertainty": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "reason_codes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 96,
+        "pattern": "^[A-Z][A-Z0-9_]*(?![\\s\\S])"
+      },
+      "minItems": 1,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "matched_facts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/fact"
+      },
+      "minItems": 0,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "policy_snapshot_hash": {
+      "$ref": "#/$defs/hash"
+    },
+    "contract_id": {
+      "$ref": "#/$defs/id"
+    },
+    "grant_id": {
+      "$ref": "#/$defs/id"
+    },
+    "timestamp": {
+      "$ref": "#/$defs/utc"
+    }
+  },
+  "required": [
+    "schema_version",
+    "decision_id",
+    "action_id",
+    "decision",
+    "hard_block",
+    "risk",
+    "uncertainty",
+    "reason_codes",
+    "matched_facts",
+    "policy_snapshot_hash",
+    "contract_id",
+    "grant_id",
+    "timestamp"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "hard_block": {
+            "const": true
+          }
+        },
+        "required": [
+          "hard_block"
+        ]
+      },
+      "then": {
+        "properties": {
+          "decision": {
+            "const": "BLOCK"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "format": "sujie-id",
+      "pattern": "^(?:[0-7][0-9A-HJKMNP-TV-Z]{25}|[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?![\\s\\S])"
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "ALLOW",
+        "ASK",
+        "BLOCK"
+      ]
+    },
+    "risk": {
+      "type": "string",
+      "enum": [
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ]
+    },
+    "fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "field": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^(principal|contract|grant|action|data|provenance|tool|runtime|history)\\.[a-zA-Z0-9_.]+(?![\\s\\S])"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        }
+      },
+      "required": [
+        "field",
+        "summary"
+      ]
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z(?![\\s\\S])"
+    }
+  }
+}

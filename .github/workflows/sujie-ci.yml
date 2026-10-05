@@ -1,0 +1,46 @@
+name: Sujie quality gates
+
+on:
+  push:
+    paths:
+      - "sujie/**"
+      - ".github/workflows/sujie-ci.yml"
+  pull_request:
+    paths:
+      - "sujie/**"
+      - ".github/workflows/sujie-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python-check:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: sujie
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: sujie/requirements.lock
+      - run: python -m pip install -r requirements.lock
+      - run: python -m pip check
+      - run: python dev.py check
+
+  compose-config:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: sujie
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose -f deploy/m1.compose.yaml config --quiet

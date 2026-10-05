@@ -1,0 +1,36 @@
+name: Bug report
+description: 报告可复现的功能或安全语义缺陷
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 问题描述
+      description: 说明预期行为与实际行为。
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 最小复现
+      description: 请只使用合成数据，不要提交真实密钥或未公开漏洞细节。
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Commit / 环境
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 测试与 Oracle 证据
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: 安全确认
+      options:
+        - label: 内容不含真实凭据、生产数据或第三方攻击目标
+          required: true

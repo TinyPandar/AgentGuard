@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "contract_id": "01K4M0AAAAAAAAAAAAAAA00001",
+  "version": 1,
+  "principal_id": "01K4M0AAAAAAAAAAAAAAA00002",
+  "session_id": "01K4M0AAAAAAAAAAAAAAA00003",
+  "trusted_goal": "分析合成告警并生成本地报告",
+  "workspace_roots": [
+    "/workspace/case-001"
+  ],
+  "allowed_purposes": [
+    "READ",
+    "ANALYZE",
+    "QUOTE",
+    "WRITE_REPORT"
+  ],
+  "allowed_effects": [
+    {
+      "kind": "file.read",
+      "resource": "/workspace/case-001/**"
+    },
+    {
+      "kind": "file.write",
+      "resource": "/workspace/case-001/output/**"
+    }
+  ],
+  "forbidden_effects": [
+    "credential.read",
+    "external.data_transfer",
+    "git.push"
+  ],
+  "budgets": {
+    "tool_calls": 40,
+    "network_calls": 5,
+    "subagents": 2
+  },
+  "expires_at": "2026-09-05T12:00:00Z",
+  "parent_contract_id": null,
+  "policy_snapshot_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "status": "ACTIVE"
+}

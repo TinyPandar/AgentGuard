@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sujie.invalid/contracts/0.1/trace-event.schema.json",
+  "title": "trace-event",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "event_id": {
+      "$ref": "#/$defs/id"
+    },
+    "trace_id": {
+      "$ref": "#/$defs/id"
+    },
+    "parent_event_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/id"
+      },
+      "minItems": 0,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "event_type": {
+      "$ref": "#/$defs/event_type"
+    },
+    "actor_id": {
+      "$ref": "#/$defs/id"
+    },
+    "session_id": {
+      "$ref": "#/$defs/id"
+    },
+    "contract_id": {
+      "$ref": "#/$defs/id"
+    },
+    "artifact_ids": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/id"
+      },
+      "minItems": 0,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "action_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/id"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "decision_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/id"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "timestamp": {
+      "$ref": "#/$defs/utc"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 2147483647
+    },
+    "payload_ref": {
+      "$ref": "#/$defs/uri"
+    },
+    "payload_hash": {
+      "$ref": "#/$defs/hash"
+    }
+  },
+  "required": [
+    "schema_version",
+    "event_id",
+    "trace_id",
+    "parent_event_ids",
+    "event_type",
+    "actor_id",
+    "session_id",
+    "contract_id",
+    "artifact_ids",
+    "action_id",
+    "decision_id",
+    "timestamp",
+    "sequence",
+    "payload_ref",
+    "payload_hash"
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "format": "sujie-id",
+      "pattern": "^(?:[0-7][0-9A-HJKMNP-TV-Z]{25}|[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?![\\s\\S])"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "USER_MESSAGE",
+        "CONTRACT_CREATED",
+        "CONTRACT_UPDATED",
+        "TOOL_REGISTERED",
+        "TOOL_CHANGED",
+        "RESOURCE_READ",
+        "CONTENT_NORMALIZED",
+        "DETECTION_FINDING",
+        "MODEL_EXPOSED",
+        "CONTENT_SUMMARIZED",
+        "MEMORY_WRITTEN",
+        "MEMORY_READ",
+        "SUBAGENT_DISPATCHED",
+        "TOOL_PROPOSED",
+        "TOOL_CALL_DECIDED",
+        "APPROVAL_REQUESTED",
+        "APPROVAL_RECORDED",
+        "COMMIT_CHECKED",
+        "EXECUTION_RESULT",
+        "RESOURCE_AFFECTED"
+      ]
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z(?![\\s\\S])"
+    },
+    "uri": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 4096
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+    }
+  }
+}

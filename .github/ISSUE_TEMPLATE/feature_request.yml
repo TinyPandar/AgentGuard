@@ -1,0 +1,32 @@
+name: Milestone task
+description: 提议一个可验收的里程碑任务
+title: "[M2] "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: milestone
+    attributes:
+      label: 里程碑
+      options: [M2, M3, M4, M5, M6, Engineering, Documentation]
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 范围与非目标
+      description: 写清楚本任务做什么、不做什么。
+    validations:
+      required: true
+  - type: textarea
+    id: contracts
+    attributes:
+      label: 输入输出与信任边界
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 测试 ID 与验收条件
+      description: 至少包含正常对照、攻击用例、Oracle 和复现命令。
+    validations:
+      required: true

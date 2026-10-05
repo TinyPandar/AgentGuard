@@ -1,0 +1,10 @@
+ARG SUJIE_PYTHON_BASE=python:3.12-slim
+FROM ${SUJIE_PYTHON_BASE}
+
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+WORKDIR /app
+COPY sandbox/receiver_service.py sandbox/container_oracle.py /app/
+RUN chmod 0555 /app/receiver_service.py /app/container_oracle.py
+
+USER 65532:65532
+CMD ["python", "/app/receiver_service.py"]

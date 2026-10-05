@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "event_id": "01K4M0AAAAAAAAAAAAAAA00012",
+  "trace_id": "01K4M0AAAAAAAAAAAAAAA00013",
+  "parent_event_ids": [
+    "01K4M0AAAAAAAAAAAAAAA00008"
+  ],
+  "event_type": "TOOL_CALL_DECIDED",
+  "actor_id": "01K4M0AAAAAAAAAAAAAAA00005",
+  "session_id": "01K4M0AAAAAAAAAAAAAAA00003",
+  "contract_id": "01K4M0AAAAAAAAAAAAAAA00001",
+  "artifact_ids": [
+    "01K4M0AAAAAAAAAAAAAAA00007"
+  ],
+  "action_id": "01K4M0AAAAAAAAAAAAAAA00009",
+  "decision_id": "01K4M0AAAAAAAAAAAAAAA00010",
+  "timestamp": "2026-09-05T09:30:00Z",
+  "sequence": 1,
+  "payload_ref": "evidence://fixture/decision",
+  "payload_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+}

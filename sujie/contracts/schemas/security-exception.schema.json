@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sujie.invalid/contracts/0.1/security-exception.schema.json",
+  "title": "security-exception",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "code": {
+      "type": "string",
+      "enum": [
+        "SECRET_EGRESS_BLOCKED",
+        "RESOURCE_OUT_OF_SCOPE",
+        "USE_NOT_ALLOWED",
+        "GRANT_INVALID",
+        "APPROVAL_STALE",
+        "UNSUPPORTED_ACTION",
+        "SEMANTIC_DEVIATION",
+        "REPEATED_VIOLATION"
+      ]
+    },
+    "blocked_effect": {
+      "$ref": "#/$defs/effect_kind"
+    },
+    "safe_reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "allowed_alternatives": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "minItems": 0,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "decision_id": {
+      "$ref": "#/$defs/id"
+    }
+  },
+  "required": [
+    "schema_version",
+    "code",
+    "blocked_effect",
+    "safe_reason",
+    "allowed_alternatives",
+    "decision_id"
+  ],
+  "$defs": {
+    "effect_kind": {
+      "type": "string",
+      "enum": [
+        "file.read",
+        "file.write",
+        "credential.read",
+        "data.transfer",
+        "external.data_transfer",
+        "exec",
+        "git.push",
+        "agent.delegate",
+        "memory.read",
+        "memory.write"
+      ]
+    },
+    "id": {
+      "type": "string",
+      "format": "sujie-id",
+      "pattern": "^(?:[0-7][0-9A-HJKMNP-TV-Z]{25}|[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?![\\s\\S])"
+    }
+  }
+}

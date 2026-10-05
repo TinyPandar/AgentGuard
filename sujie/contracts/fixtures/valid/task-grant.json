@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "grant_id": "01K4M0AAAAAAAAAAAAAAA00004",
+  "contract_id": "01K4M0AAAAAAAAAAAAAAA00001",
+  "subject_id": "01K4M0AAAAAAAAAAAAAAA00005",
+  "parent_grant_id": null,
+  "effects": [
+    "file.read",
+    "file.write:report"
+  ],
+  "resource_scopes": [
+    "/workspace/case-001/**"
+  ],
+  "budgets": {
+    "tool_calls": 20
+  },
+  "expires_at": "2026-09-05T11:00:00Z",
+  "status": "ACTIVE"
+}

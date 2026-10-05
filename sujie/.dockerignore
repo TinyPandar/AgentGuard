@@ -1,0 +1,13 @@
+.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.ruff_cache
+control-plane-java
+console-vue
+eval
+tests
+gateway-python/tests
+contracts/tests
+docs
+deploy/*.log

@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sujie.invalid/contracts/0.1/detection-finding.schema.json",
+  "title": "detection-finding",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "finding_id": {
+      "$ref": "#/$defs/id"
+    },
+    "attack_source": {
+      "$ref": "#/$defs/attack_source"
+    },
+    "attack_family": {
+      "$ref": "#/$defs/attack_family"
+    },
+    "spans": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding_span"
+      },
+      "minItems": 1,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "normalized_view": {
+      "$ref": "#/$defs/uri"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 512
+      },
+      "minItems": 1,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "detector_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    }
+  },
+  "required": [
+    "schema_version",
+    "finding_id",
+    "attack_source",
+    "attack_family",
+    "spans",
+    "normalized_view",
+    "confidence",
+    "reasons",
+    "detector_version"
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "format": "sujie-id",
+      "pattern": "^(?:[0-7][0-9A-HJKMNP-TV-Z]{25}|[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?![\\s\\S])"
+    },
+    "attack_source": {
+      "type": "string",
+      "enum": [
+        "DIRECT",
+        "INDIRECT",
+        "MEMORY"
+      ]
+    },
+    "attack_family": {
+      "type": "string",
+      "enum": [
+        "ROLE_SPOOFING",
+        "CONTEXT_HIJACK",
+        "AUTHORIZATION_FORGERY",
+        "TOOL_POISONING",
+        "MEMORY_POISONING",
+        "DATA_EXFILTRATION",
+        "MULTILINGUAL_EMOJI",
+        "UNICODE_CONFUSABLE",
+        "FRAGMENTED_MULTITURN",
+        "COMMENT_DELIMITER",
+        "CHARACTER_ENCODING",
+        "CONTEXT_DILUTION",
+        "SEMANTIC_DISGUISE"
+      ]
+    },
+    "finding_span": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {
+          "$ref": "#/$defs/id"
+        },
+        "start": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        }
+      },
+      "required": [
+        "artifact_id",
+        "start",
+        "end"
+      ]
+    },
+    "uri": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 4096
+    }
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sujie.invalid/contracts/0.1/task-grant.schema.json",
+  "title": "task-grant",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "grant_id": {
+      "$ref": "#/$defs/id"
+    },
+    "contract_id": {
+      "$ref": "#/$defs/id"
+    },
+    "subject_id": {
+      "$ref": "#/$defs/id"
+    },
+    "parent_grant_id": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/id"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "effects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/grant_effect"
+      },
+      "minItems": 1,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "resource_scopes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/scope"
+      },
+      "minItems": 1,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "budgets": {
+      "$ref": "#/$defs/budgets"
+    },
+    "expires_at": {
+      "$ref": "#/$defs/utc"
+    },
+    "status": {
+      "$ref": "#/$defs/status"
+    }
+  },
+  "required": [
+    "schema_version",
+    "grant_id",
+    "contract_id",
+    "subject_id",
+    "parent_grant_id",
+    "effects",
+    "resource_scopes",
+    "budgets",
+    "expires_at",
+    "status"
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "format": "sujie-id",
+      "pattern": "^(?:[0-7][0-9A-HJKMNP-TV-Z]{25}|[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?![\\s\\S])"
+    },
+    "grant_effect": {
+      "type": "string",
+      "enum": [
+        "file.read",
+        "file.write",
+        "file.write:report",
+        "credential.read",
+        "data.transfer",
+        "exec",
+        "git.push",
+        "agent.delegate",
+        "memory.read",
+        "memory.write"
+      ]
+    },
+    "scope": {
+      "type": "string",
+      "format": "resource-scope",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tool_calls": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "network_calls": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        },
+        "subagents": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2147483647
+        }
+      },
+      "required": [
+        "tool_calls"
+      ]
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z(?![\\s\\S])"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ACTIVE",
+        "REVOKED",
+        "EXPIRED"
+      ]
+    }
+  }
+}

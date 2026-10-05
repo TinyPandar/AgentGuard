@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "decision_id": "01K4M0AAAAAAAAAAAAAAA00010",
+  "action_id": "01K4M0AAAAAAAAAAAAAAA00009",
+  "decision": "ASK",
+  "hard_block": false,
+  "risk": "HIGH",
+  "uncertainty": 0.1,
+  "reason_codes": [
+    "CONFIRM_REPORT_WRITE"
+  ],
+  "matched_facts": [
+    {
+      "field": "action.effect.kind",
+      "summary": "file.write"
+    }
+  ],
+  "policy_snapshot_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "contract_id": "01K4M0AAAAAAAAAAAAAAA00001",
+  "grant_id": "01K4M0AAAAAAAAAAAAAAA00004",
+  "timestamp": "2026-09-05T09:30:00Z",
+  "untrusted_override": "not allowed"
+}

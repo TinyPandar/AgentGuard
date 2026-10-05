@@ -1,0 +1,20 @@
+[project]
+name = "sujie-workspace"
+version = "0.1.0"
+description = "Sujie runtime security gateway contracts and deterministic M1 closed loop"
+requires-python = ">=3.12,<3.13"
+
+[tool.pytest.ini_options]
+testpaths = ["contracts/tests", "gateway-python/tests", "tests"]
+pythonpath = ["gateway-python/src", "demo-agent", "sandbox"]
+addopts = "-ra --strict-markers"
+asyncio_mode = "auto"
+markers = ["live_llm: requires a configured external or local LLM"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+exclude = [".venv"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]

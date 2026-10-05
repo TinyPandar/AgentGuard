@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sujie.invalid/contracts/0.1/approval-record.schema.json",
+  "title": "approval-record",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "approval_id": {
+      "$ref": "#/$defs/id"
+    },
+    "decision_id": {
+      "$ref": "#/$defs/id"
+    },
+    "approved_by": {
+      "$ref": "#/$defs/id"
+    },
+    "binding": {
+      "$ref": "#/$defs/binding"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PENDING",
+        "APPROVED",
+        "REJECTED",
+        "EXPIRED",
+        "REVOKED"
+      ]
+    },
+    "created_at": {
+      "$ref": "#/$defs/utc"
+    },
+    "approved_at": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/utc"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "expires_at": {
+      "$ref": "#/$defs/utc"
+    },
+    "consumed": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema_version",
+    "approval_id",
+    "decision_id",
+    "approved_by",
+    "binding",
+    "status",
+    "created_at",
+    "approved_at",
+    "expires_at",
+    "consumed"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "APPROVED"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "then": {
+        "properties": {
+          "approved_at": {
+            "$ref": "#/$defs/utc"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "format": "sujie-id",
+      "pattern": "^(?:[0-7][0-9A-HJKMNP-TV-Z]{25}|[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?![\\s\\S])"
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "principal_id": {
+          "$ref": "#/$defs/id"
+        },
+        "session_id": {
+          "$ref": "#/$defs/id"
+        },
+        "subject_id": {
+          "$ref": "#/$defs/id"
+        },
+        "action_id": {
+          "$ref": "#/$defs/id"
+        },
+        "action_hash": {
+          "$ref": "#/$defs/hash"
+        },
+        "contract_id": {
+          "$ref": "#/$defs/id"
+        },
+        "contract_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "contract_snapshot_hash": {
+          "$ref": "#/$defs/hash"
+        },
+        "grant_id": {
+          "$ref": "#/$defs/id"
+        },
+        "grant_snapshot_hash": {
+          "$ref": "#/$defs/hash"
+        },
+        "policy_snapshot_hash": {
+          "$ref": "#/$defs/hash"
+        },
+        "tool_identity": {
+          "$ref": "#/$defs/tool_identity"
+        },
+        "materialized_args_hash": {
+          "$ref": "#/$defs/hash"
+        },
+        "input_content_hash": {
+          "$ref": "#/$defs/hash"
+        },
+        "provenance_snapshot_hash": {
+          "$ref": "#/$defs/hash"
+        }
+      },
+      "required": [
+        "principal_id",
+        "session_id",
+        "subject_id",
+        "action_id",
+        "action_hash",
+        "contract_id",
+        "contract_version",
+        "contract_snapshot_hash",
+        "grant_id",
+        "grant_snapshot_hash",
+        "policy_snapshot_hash",
+        "tool_identity",
+        "materialized_args_hash",
+        "input_content_hash",
+        "provenance_snapshot_hash"
+      ]
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "tool_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "server_id": {
+          "$ref": "#/$defs/id"
+        },
+        "tool_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]*(?![\\s\\S])"
+        },
+        "tool_version_hash": {
+          "$ref": "#/$defs/hash"
+        }
+      },
+      "required": [
+        "server_id",
+        "tool_name",
+        "tool_version_hash"
+      ]
+    },
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,6})?Z(?![\\s\\S])"
+    }
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sujie.invalid/contracts/0.1/semantic-action.schema.json",
+  "title": "semantic-action",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "action_id": {
+      "$ref": "#/$defs/id"
+    },
+    "subject_id": {
+      "$ref": "#/$defs/id"
+    },
+    "tool_identity": {
+      "$ref": "#/$defs/tool_identity"
+    },
+    "effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/effect_kind"
+        },
+        "operation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Z][A-Z0-9_]*(?![\\s\\S])"
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/scope"
+          },
+          "minItems": 1,
+          "maxItems": 4096,
+          "uniqueItems": true
+        },
+        "destination_trust": {
+          "$ref": "#/$defs/destination_trust"
+        },
+        "side_effect": {
+          "type": "boolean"
+        },
+        "reversible": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "operation",
+        "resources",
+        "destination_trust",
+        "side_effect",
+        "reversible"
+      ]
+    },
+    "input_artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/id"
+      },
+      "minItems": 0,
+      "maxItems": 4096,
+      "uniqueItems": true
+    },
+    "materialized_args_hash": {
+      "$ref": "#/$defs/hash"
+    },
+    "contract_id": {
+      "$ref": "#/$defs/id"
+    },
+    "grant_id": {
+      "$ref": "#/$defs/id"
+    }
+  },
+  "required": [
+    "schema_version",
+    "action_id",
+    "subject_id",
+    "tool_identity",
+    "effect",
+    "input_artifacts",
+    "materialized_args_hash",
+    "contract_id",
+    "grant_id"
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "format": "sujie-id",
+      "pattern": "^(?:[0-7][0-9A-HJKMNP-TV-Z]{25}|[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})(?![\\s\\S])"
+    },
+    "tool_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "server_id": {
+          "$ref": "#/$defs/id"
+        },
+        "tool_name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]*(?![\\s\\S])"
+        },
+        "tool_version_hash": {
+          "$ref": "#/$defs/hash"
+        }
+      },
+      "required": [
+        "server_id",
+        "tool_name",
+        "tool_version_hash"
+      ]
+    },
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
+    },
+    "effect_kind": {
+      "type": "string",
+      "enum": [
+        "file.read",
+        "file.write",
+        "credential.read",
+        "data.transfer",
+        "external.data_transfer",
+        "exec",
+        "git.push",
+        "agent.delegate",
+        "memory.read",
+        "memory.write"
+      ]
+    },
+    "scope": {
+      "type": "string",
+      "format": "resource-scope",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "destination_trust": {
+      "type": "string",
+      "enum": [
+        "LOCAL",
+        "INTERNAL",
+        "TRUSTED_EXTERNAL",
+        "UNTRUSTED_EXTERNAL",
+        "NOT_APPLICABLE"
+      ]
+    }
+  }
+}

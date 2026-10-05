@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "finding_id": "01K4M0AAAAAAAAAAAAAAA00014",
+  "attack_source": "INDIRECT",
+  "attack_family": "AUTHORIZATION_FORGERY",
+  "spans": [
+    {
+      "artifact_id": "01K4M0AAAAAAAAAAAAAAA00007",
+      "start": 0,
+      "end": 20
+    }
+  ],
+  "normalized_view": "evidence://fixture/normalized",
+  "confidence": 0.9,
+  "reasons": [
+    "合成样本声称管理员已授权"
+  ],
+  "detector_version": "fixture-only-0.1",
+  "untrusted_override": "not allowed"
+}

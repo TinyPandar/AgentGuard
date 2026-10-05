@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "code": "SECRET_EGRESS_BLOCKED",
+  "blocked_effect": "data.transfer",
+  "safe_reason": "输入包含受保护数据且目标不可信",
+  "allowed_alternatives": [
+    "将报告写入本地输出目录"
+  ],
+  "decision_id": "01K4M0AAAAAAAAAAAAAAA00010"
+}
