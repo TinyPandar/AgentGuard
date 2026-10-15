@@ -5,10 +5,12 @@
 
 ## 开发与验证
 
+- 本轮共同开发起点为 `integration/teammate-m21`；从该分支建立个人 `feat/`、`fix/` 或 `docs/` 分支，PR 暂以集成分支为目标。集成验收后再恢复以 `main` 为起点。参见[集成交接](docs/INTEGRATION_M21.md)。
+
 - 在 `sujie/` 使用Python3.12；按 `requirements.lock` 创建独立环境；前端按 `package-lock.json` 安装。完整命令见交接手册。
 - Python修改运行 `python dev.py check`；针对改动补有意义的正常/拒绝/实际副作用检查。前端修改运行 `npm run build`，交互变更还需相应实际界面验证。
 - 隔离/网络边界变更需在目标Linux环境验收相应拓扑。旧 `sh deploy/run_m1_container_test.sh` 只验M1；当前新版整体拓扑尚未验收，缺环境时如实记录。
-- 不覆盖用户改动、运行任务、旧报告、预算账本或冻结协议。当前交付目录不是Git工作区，不能假设存在main分支/远端；如接手后纳入版本管理，再采用短分支、Issue和PR流程。
+- 不覆盖用户改动、运行任务、旧报告、预算账本或冻结协议。原交付是无 Git 历史的源码快照，现已导入现有仓库；以当前 Git 状态和远端分支为准。
 
 ## 安全与证据纪律
 
