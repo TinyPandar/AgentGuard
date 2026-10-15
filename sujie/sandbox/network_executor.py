@@ -105,6 +105,8 @@ def fetch(policy: NetworkPolicy, arguments: dict) -> dict:
             if time.monotonic() >= deadline:
                 raise NetworkError("NETWORK_TIMEOUT")
             response = connection.getresponse()
+            if time.monotonic() >= deadline:
+                raise NetworkError("NETWORK_TIMEOUT")
             chain.append(origin)
             if response.status in {301, 302, 303, 307, 308}:
                 if request["method"] != "GET":
@@ -136,6 +138,9 @@ def fetch(policy: NetworkPolicy, arguments: dict) -> dict:
                     break
                 transport_socket.settimeout(remaining)
                 chunk = response.read1(min(8192, config["max_response_bytes"] + 1 - size))
+                # Deadline shutdown can wake a blocked read as EOF, not OSError.
+                if time.monotonic() >= deadline:
+                    raise NetworkError("NETWORK_TIMEOUT")
                 if not chunk:
                     if response.length:
                         raise NetworkError("NETWORK_RESPONSE_TRUNCATED")

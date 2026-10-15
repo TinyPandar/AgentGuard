@@ -5,8 +5,11 @@ import socket
 import ssl
 import sys
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock
 from urllib.parse import quote
 
+import network_executor
 import pytest
 from mcp import StdioServerParameters
 from network_executor import PinnedConnection, fetch, resolve_public
@@ -227,6 +230,48 @@ def test_slow_response_has_total_deadline():
         with pytest.raises(NetworkError, match="NETWORK_TIMEOUT"):
             fetch(NetworkPolicy.from_dict(config), {"url": "https://docs.test.invalid/slow"})
         assert time.monotonic() - start < 2
+
+
+@pytest.mark.parametrize(
+    "elapsed,code",
+    [(2.0, "NETWORK_TIMEOUT"), (0.25, "NETWORK_RESPONSE_TRUNCATED")],
+)
+def test_body_eof_preserves_deadline_vs_premature_close(monkeypatch, elapsed, code):
+    clock = [0.0]
+    response = Mock(status=200, length=3)
+    response.isclosed.return_value = False
+
+    def read_eof(_size):
+        clock[0] = elapsed
+        return b""
+
+    response.read1.side_effect = read_eof
+    connection = Mock()
+    connection.getresponse.return_value = response
+    timer = Mock()
+    monkeypatch.setattr(network_executor, "time", SimpleNamespace(monotonic=lambda: clock[0]))
+    monkeypatch.setattr(network_executor, "PinnedConnection", Mock(return_value=connection))
+    monkeypatch.setattr(
+        network_executor, "threading", SimpleNamespace(Timer=Mock(return_value=timer))
+    )
+    origin = "https://docs.test.invalid"
+    policy = NetworkPolicy.from_dict(
+        {
+            "mode": "SEALED_TEST",
+            "origins": [origin],
+            "aliases": {origin: "http://127.0.0.1:8080"},
+            "trusted_origins": [],
+            "paths": {origin: ["/article"]},
+            "max_response_bytes": 1024,
+            "max_redirects": 0,
+            "timeout_seconds": 1,
+        }
+    )
+    with pytest.raises(NetworkError, match=f"^{code}$"):
+        fetch(policy, {"url": origin + "/article"})
+    response.read1.assert_called_once()
+    connection.close.assert_called_once()
+    timer.cancel.assert_called_once()
 
 
 def test_public_mode_rejects_any_private_dns_answer(monkeypatch):
