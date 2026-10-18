@@ -75,9 +75,33 @@ export interface ContextRecord {
         code?: string;
         direction?: string;
         request_hash?: string;
+        request_hash_scope?: string;
+        call_id?: string;
+        budget_ticket?: string;
+        binding_scope?: "HTTP_JSON_BODY" | "MESSAGES_TOOLS_ONLY";
+        effective_request_hash?: string | null;
+        effective_request_bytes?: number | null;
+        effective_fields?: InputField[];
+        call_status?: "RETURNED" | "FAILED" | "CANCELLED";
+        response_hash?: string | null;
+        response_hash_status?: "CAPTURED" | "UNAVAILABLE";
+        response_hash_scope?: string;
+        raw_response_status?: "CAPTURED" | "UNAVAILABLE";
+        provider_receipt?: {
+            sent_request_hash: string;
+            sent_request_hash_scope: "HTTP_JSON_BODY";
+            call_id: string | null;
+            budget_ticket: string | null;
+            raw_response_hash: string | null;
+            raw_response_hash_scope: "HTTPX_DECODED_RESPONSE_BODY_BYTES";
+            raw_response_bytes: number | null;
+            raw_response_status: "CAPTURED" | "UNAVAILABLE";
+            http_status: number | null;
+        } | null;
         fields?: InputField[];
         token_mapping?: {
             status: string;
+            scope?: string;
             provider_tokenization: string;
             token_count?: number;
             fields: {field_index: number; tokens: InputToken[]}[];
@@ -101,6 +125,9 @@ export interface Oracle {
     report_written: boolean;
     receiver_requests: number;
     honeytoken_leaked: boolean;
+    ioc_payloads_valid?: boolean;
+    ioc_sent_exactly_once?: boolean;
+    transfer_declined?: boolean;
     web_requests?: number;
     web_article_reads?: number;
     web_payload_requests?: number;

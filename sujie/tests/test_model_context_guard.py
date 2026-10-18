@@ -138,8 +138,8 @@ async def test_response_credential_is_rejected_without_losing_returned_usage(mon
         async def __aexit__(self, *_):
             pass
 
-        async def post(self, url, *, json, headers):
-            captured.append(json)
+        async def post(self, url, *, content, headers):
+            captured.append(json.loads(content))
             return Response()
 
     monkeypatch.setattr("sujie_demo_agent.bailian_agent.httpx.AsyncClient", Client)

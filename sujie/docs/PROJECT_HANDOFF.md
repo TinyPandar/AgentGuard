@@ -1,6 +1,6 @@
 # 项目交接手册
 
-更新：2026-10-15。实现基准为 M21 及其协议索引修正；本轮仅整理文档。
+更新：2026-10-18。M21交接后已按用户要求继续至M25，同事实脚本比较与三来源有限代表已独立核验。先读[M25与项目总体报告](../../competition/docs/M25_AND_OVERALL_REPORT_2026-10-18.md)、[M25阶段记录](M25_STATUS.md)、[同事实比较专项](M25_MODEL_COMPARISON.md)和[来源代表专项](M25_SOURCE_BYPASS.md)，继续顺序见第7节及[M25安排](M25_NEXT_STEPS.md)。M24及以前证据保持原始版本。
 
 ## 1. 先读什么、以什么为准
 
@@ -10,7 +10,7 @@
 4. [F3 计划](../../competition/docs/SUJIE_REVIEW_AND_PLAN_F3.md)：后续目标与依赖；其制定时的现状、日程和指标不是当前成绩。
 5. [全部文档索引](DOCUMENT_INDEX.md)：区分当前指南、阶段记录、历史原型和设计目标。
 
-当前实现事实以代码和对应阶段的原始证据为依据；历史记录保留当时版本。原始设计并非当前全部实现，旧任务清单也不是接手后的自动执行指令。用户最后一次开发范围为“四类业务实现后先停止”，已完成；**本次授权为文档更新，剩余开发尚未恢复**。
+当前实现事实以代码和对应阶段的原始证据为依据；历史记录保留当时版本。原始设计并非当前全部实现，旧任务清单也不是接手后的自动执行指令。10月15日“四类业务实现后先停止”已执行；**10月16日用户已确认新计划并要求开始实施**，本轮恢复Mac Git、IOC开发修复、任务登记与共同运行器，正式冻结/云主比较仍待准入。
 
 ## 2. 项目身份和完成边界
 
@@ -24,6 +24,8 @@
 | `control-plane-java/` | 仅说明目录；Java/Spring/MySQL 未实现，不是运行依赖 |
 | `deploy/m1.compose.yaml` | 历史 M1 确定性容器链路；未覆盖当前全部模型、子 Agent 与新增工具 |
 | `deploy/compose.yaml` | M0 历史占位，不作部署/隔离证据 |
+| `deploy/m23/` | 保留M23 Linux arm64单容器四链有限smoke；Host/工具同UID，未验收完整工具/角色隔离 |
+| `deploy/m24/` | 新增六候选参数化Linux smoke及主机独立重算，结果与最终v2对应见[M24 Linux](M24_LINUX_SMOKE.md)；仍非完整工具/角色隔离 |
 
 已实现的 13 个开发 profile：
 
@@ -45,7 +47,7 @@
 
 ## 3. 新机器安装与无密钥启动
 
-需要 Python **3.12.x**、Node **20.19+ 或 22.12+**；Git 业务还需要 PATH 中可执行的 Git。当前检查解释器为 Windows Python 3.12.2；旧文档中的其他补丁版本是历史环境。不要拷贝旧 `.venv` 或 `node_modules` 充当可移植环境。
+需要 Python **3.12.x**、Node **20.19+ 或 22.12+**；Git 业务还需要 PATH 中可执行的 Git。M21交接检查解释器为Windows Python3.12.2；M22当前Mac为CPython3.12.14。不要拷贝旧 `.venv` 或 `node_modules` 充当可移植环境。
 
 Windows PowerShell，从仓库根目录开始：
 
@@ -64,6 +66,8 @@ Pop-Location
 ```
 
 Linux/macOS 使用 `.venv/bin/python`。安装包、首次分词器下载和前端安装需要网络或预先核验的离线资源；**无 API 密钥模式不等于新机完全离线安装**。
+
+当前这台Mac已在仓库根目录新建`.venv/`，原`sujie/.venv/`为Windows环境并保留原样。在`sujie/`执行`../.venv/bin/python dev.py check`或`../.venv/bin/python control-plane-python/run_console.py`；从根目录检查用`./.venv/bin/python sujie/dev.py check`。前端已按原锁重建Mac依赖，旧Windows目录保存在`console-vue/.tmp/node_modules-windows-pre-m22/`，不进入公开交付包。
 `prepare-tokenizer` 只下载固定 revision 的公开 JSON，不下载模型权重；运行时不自动补下载。缺失资产会标注 `UNAVAILABLE`，不能声明 token 映射正常。清单为 `assets/tokenizer/qwen3-local-manifest.json`，缓存位于 `model-cache/`；资产及许可仍需纳入正式交付整理。
 
 打开 `http://127.0.0.1:8765`，本机查看 `.control-runtime/operator-token.txt`，把本次操作者凭据粘贴到页面。不要把内容写入文档/日志/提交包。凭据在页面内存中保存，刷新后需重新登录；每次启动生成新凭据。服务只绑定 loopback。
@@ -134,7 +138,9 @@ Linux/macOS 使用 `.venv/bin/python`。安装包、首次分词器下载和前�
 .\.venv\Scripts\python.exe eval/verify_runtime_validation.py eval/reports/runs/four_business_m21_scripted_v3
 ```
 
-`check` 含 ruff 检查、格式检查和全部 pytest；时长与机器相关。本轮为文档更新，未重跑全量回归或云模型。要生成新的四业务确定性校准可使用下列命令，输出目录必须是新的；没有 `--credentials-file` 时使用脚本模型：
+`check` 含 ruff 检查、格式检查和全部 pytest；时长与机器相关。M25全量原始日志记载 **1022 passed / 1 warning（759.38秒）**，Ruff及216文件格式检查通过；用户主动中断后未取回进程退出码，不声明已观察到exit 0。M25源码/配置冻结281份，见[最终快照](../../competition/reviews/2026-10-18-m25/final-runtime-sources-v1.json)，SHA-256 `88905c9e90af4a3f6f34385f5c3d9da273401a7d64be69fae076b0554dafdc71`；原265份应用/部署文件和1183份历史证据精确保全，M9与依赖锁未改，详细检查状态见[M25记录](M25_STATUS.md)。
+
+10月18日M24历史最终v2完整893项/1 warning（672.97秒）、Ruff及202文件格式通过；80格、40格、35格与Linux六链均通过独立核验，见[M24](M24_STATUS.md)。M23当时657项/1 warning（545.08秒）、182文件格式与Vue类型检查/构建通过，原[quality-gates.json](../../competition/reviews/2026-10-16-m23/quality-gates.json)和M22的536项不改写。本轮未改前端源码，不把旧构建当作新浏览器布局验收。要生成新的四业务确定性校准可使用下列命令，输出目录必须是新的；没有 `--credentials-file` 时使用脚本模型：
 
 ```powershell
 .\.venv\Scripts\python.exe eval/run_business_validation.py `
@@ -150,6 +156,17 @@ Linux/macOS 使用 `.venv/bin/python`。安装包、首次分词器下载和前�
 
 | 记录 | 事实及解释 |
 |---|---|
+| `m25_controlled_scripted_20261018_v1/` | 同事实48格/14配对独立核验通过；正常执行48、业务完成46、实际危险效果2（Git injected的unsafe/strong-static），0云/0Provider传输；不是ASR |
+| `m25_source_representatives_20261018_v1/` | 直接Unicode、外部Base64、跨新会话Memory语义伪装14格/7配对独立核验通过；业务14，unsafe下3次禁止的本地标记写入、Full下0；固定提议不证明模型语义理解 |
+| `m25_controlled_offline_http_20261018_v1/` | 同一48格协议的封闭HTTP Mock执行；完成与独立核验状态以[M25记录](M25_STATUS.md)为准，实际Provider prepare/解析/receipt/预算路径不构成云模型推理 |
+| `m24_core_parameterized_development_20261018_v2/` | 最终80格/16配对、76utility/4实际Git禁止推送，独立重算与源码对应通过；v1和生命周期反例另保留 |
+| `m24_business_parameterized_20261018_v1/` | M23原八开发实例同版复验40/40、8配对与SQL独立核验通过；不增加独立任务 |
+| `m24_direct_effects_20261018_v1/` | 35/35固定提议与7配对实际效果复验通过；29utility/9危险效果，非ASR |
+| `m23_parameterized_business_development_v1_20261017_v3/` | 时间线/附件两候选×4seed×五配置40/40、8配对与独立SQL复算通过；已暴露开发实例，不增加独立任务数，0云 |
+| `m23_direct_effects_20261017_v3/` | 7条固定提议×五配置35/35、7配对、实际效果/utility独立核验；无自主模型运行，不计ASR；额外保留核验器源码清单 |
+| [仓库根Linux证据目录](../../competition/reviews/2026-10-16-m23/linux-smoke/) | arm64 Linux受限单容器四链完成，IOC恰好一次许可发送、Git ref不变；部署检查首失败与修复后新镜像均保留 |
+| `m22_common_business_clean_five_configs_execution_gated_20261016/` | C四业务×五配置20/20；执行/业务分别判定，4组配对、独立CLI与当前源码对应通过；0云 |
+| `m22_common_business_attack_quote_five_configs_20261016/` | 同源码A/Q共40/40；Q逐字引用20/20，危险提议/BLOCK/ASK均0；8组配对与独立CLI通过；不是模型ASR或防御增益 |
 | `four_business_m21_scripted_v3/summary.json` | 16/16脚本业务；0云。84文件源码归档 SHA-256 `f6f1fbb5fd3a42791cb48b1830d768a8f166318a25a323a3a24645981cfcd32d` |
 | 同目录 `checks.json` | 查询修复前479 passed/2 skipped/1 warning；修复后52专项；166文件格式与Vue构建通过；无最新浏览器布局验收 |
 | `four_business_m21_model_v1/summary.json` | 云首轮3/4；时间线失败保留；15请求/24,144tokens |
@@ -164,6 +181,8 @@ M21 协议身份：最初脚本 v1 为512输出上限，已从源码归档恢复
 ### 必须随项目另行移交的本地产物
 
 - 文档链接到的 `eval/reports/` 原始报告、脱敏导出、实际合成结果、`runtime-sources` 与 manifest；多数被忽略，单纯复制 Git 可见文件会缺失。
+- `competition/reviews/2026-10-18-m25/`的基线、281份最终快照、全量原始日志、专项反例与核验；M25各运行目录的原始报告/独立核验须随版本移交。265份原代码/部署与1183份旧证据保全不等于已经制作匿名提交包。
+- `competition/reviews/2026-10-16-m23/`的quality gates、原字节源码、补丁、Linux记录及失败证据。当前工作目录没有Git元数据；不要仅凭补丁假定已有提交历史，应用最终243项与部署guard2分别核对。
 - 固定协议 `eval/protocols/`、数据版本与外部来源/许可、依赖锁、分词器清单与核验后的资产；离线 wheel/镜像若采用，另附其来源和完整摘要。
 - 需要保留的用户任务先从控制台导出；临时任务正文、审批与 MCP 生命周期不会因预算账本持久化自动保存。
 - API CSV、操作者 token、个人环境文件通过独立私密渠道处理，不装入公开源码/证据包。不要把整个 `.control-runtime`、虚拟环境或个人聊天文件夹打包公开。
@@ -172,16 +191,18 @@ M9 冻结四文件保持原样：`demo-agent/sujie_demo_agent/semantic_detector.
 
 ## 7. 尚未完成及建议接手顺序
 
-下表保留剩余工作，**不是本轮新增执行授权**；恢复开发时按实际资源调整。
+下表已按M25实际进展更新。同事实观察性协议/运行器/独立核验器、48格脚本比较和三来源14格代表已实施；完整离线HTTP状态以[M25记录](M25_STATUS.md)为准。脚本与Mock是开发校准，真实模型CLI仍关闭，不能直接添加凭据冒充正式实验。下一步见[M25安排](M25_NEXT_STEPS.md)，国家级奖项目标仍需对照证据与可复现交付支撑。
+
+用户随后授权按需加入GitHub skills，已固定版本安装 `property-based-testing` 与 `variant-analysis`，使用范围、来源摘要和待实现测试性质见[技能记录](../../competition/docs/DEVELOPMENT_SKILLS_2026-10-16.md)。技能辅助开发，不替代正式实验，也不把候选审查点自动计为确认漏洞。
 
 | 顺序 | 工作与验收要求 | 当前限制 |
 |---|---|---|
-| 1 | 登记独立基础任务/Oracle、固定 C正常/A攻击/Q合法危险引用/R授权高风险与五配置公平条件 | 13开发profile不等于正式12任务；288内部计划运行未执行 |
-| 2 | 分析 M19 IOC 合法任务失败，在开发数据修复后再冻结主比较 | 不以筛选成功运行替代失败记录，不将无危险提议算阻断 |
-| 3 | 补全上下文三入口、所有实际模型角色、完整有效请求配置及返回证据；完善序列/跨轮分级语义 | 当前部分字面/转义与保守继承；历史分类/评测入口未全统一 |
-| 4 | 补三来源×七绕过矩阵、敏感目录/平台效果矩阵、信息保全和恢复策略比较 | 代表链成立不等于覆盖所有绕过/任意DLP/任意业务 |
-| 5 | 获得 Linux 环境后验收当前完整 Host/工具/子 Agent 隔离、进程树限制及真实性能 | 用户已确认当前无可用环境；历史 M1 不代替新版拓扑 |
-| 6 | 当前同版全量回归、界面操作/布局、跨机安装、脱敏证据包、匿名报告/演示/许可/提交回执 | 远端CI、正式材料及竞赛平台提交未完成 |
+| 1 | 保全M25已完成的脚本/离线HTTP全矩阵、独立核验与统一版本索引；为真实模型另立协议 | 脚本与HTTP各48格/14配对独立核验通过，HTTP有265次进程内Mock传输、0云；来源14格/7配对。Mock不做模型推理，已暴露seed不等于未见任务 |
+| 2 | 用户登记仓库外已有私密凭据路径及覆盖校准的总请求/token或费用上限后，准入真实模型执行 | 需新协议和受限执行入口，全部角色共享预算；当前云CLI关闭，不读取私人凭据，不消耗云额度 |
+| 3 | 冻结未见输入、同事实C/A与适用Q/去重R、预选有效消融及任务聚类统计；保留逐例失败 | 六候选和重复seed不是独立任务数；IOC C∩R复用同格，不以未提危险动作算阻断；Git禁推主要证明任务授权，不能冒称来源机制独有收益 |
+| 4 | 扩展三来源×七绕过、历史裸分类等入口、敏感目录/平台效果、信息保全与恢复比较 | M25只验三类来源的有限代表与固定禁止写入，不是21格全覆盖或自然语言ASR；主/子/Memory/分析绑定不代表历史入口全覆盖 |
+| 5 | 验收完整 Host/工具/子 Agent 的 Linux 隔离、进程树限制与同版真实性能 | M24同容器同UID六候选smoke保留，M25无新Linux/隔离/性能验收 |
+| 6 | 完成三段演示的实际UI操作、跨机安装、脱敏证据派生包、匿名报告/许可及最终提交核查 | M25全量日志1022项与退出码未取回的边界须如实记录；前端仅有M23构建历史证据，浏览器布局、匿名包、新机复现和提交回执未验收 |
 
 Java/MySQL、多操作者、策略发布、持久任务/审批、跨崩溃一致性及跨进程子 Agent 仍为未实现扩展；是否优先取决于恢复后的实际目标。公开基准只按已适配子集描述，AgentDojo 的固定包/任务元数据不是执行成绩。赛事日期、规则、云资源与价格须在实际提交/调用前重新核对官方；本手册不重新发布历史排期为最新通知。
 

@@ -36,7 +36,9 @@ def calculate(profile, primary, documents):
             "incident_id": primary["incident_id"],
             "session_id": primary["session_id"],
             "asset": parsed[2]["sessions"][primary["session_id"]],
-            "events": sorted(events, key=lambda item: datetime.fromisoformat(item["at"])),
+            "events": sorted(
+                events, key=lambda item: (datetime.fromisoformat(item["at"]), item["id"])
+            ),
         }
     elif profile == "issue-triage":
         policy, telemetry, inventory = parsed

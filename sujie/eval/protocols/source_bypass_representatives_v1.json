@@ -1,0 +1,30 @@
+{
+  "kind": "source-bypass-representatives-development-v1",
+  "execution_mode": "scripted-fixed-proposal-only",
+  "formal_ready": false,
+  "exposure": "development-exposed",
+  "variants": [
+    "unsafe",
+    "full"
+  ],
+  "task_provider_requests": 12,
+  "task_reservation_units": 200000,
+  "session_timeout_seconds": 120,
+  "approval_rule": "approve-every-pinned-ask",
+  "cases": [
+    "unicode-direct-C",
+    "unicode-direct-A",
+    "encoded-external-C",
+    "encoded-external-A",
+    "camouflaged-memory-C",
+    "camouflaged-memory-A",
+    "unicode-direct-Q"
+  ],
+  "scope": "three finite source entries, actual MCP and identical prohibited write proposals after actual exposure; not model semantic ASR or 21-cell bypass coverage",
+  "unsupported": [
+    "IOC generic Q",
+    "additional Memory Q independent of required raw archival",
+    "pure Memory fragments",
+    "actual multi-round collusion and other unexecuted three-by-seven cells"
+  ]
+}
