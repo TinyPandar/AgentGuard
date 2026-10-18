@@ -23,7 +23,7 @@ M24 Linux六链 & 六候选各一实例完成，容器退出码0，主机独立�
 \end{tabularx}
 \end{table}
 
-M24容器使用UID/GID 10001、只读rootfs、\path{--network none}、CapDrop ALL、no-new-privileges、pids与内存限额及指定tmpfs。观测到CapEff为0、NoNewPrivs为1、rootfs写探针返回EROFS，仅loopback处于UP且无可用默认路由。该记录验证六候选有限链路的运行约束，未测量M25完整矩阵的隔离或吞吐开销。
+M24容器使用UID/GID 10001、只读rootfs、\texttt{--network none}、CapDrop ALL、no-new-privileges、pids与内存限额及指定tmpfs。观测到CapEff为0、NoNewPrivs为1、rootfs写探针返回EROFS，仅loopback处于UP且无可用默认路由。该记录验证六候选有限链路的运行约束，未测量M25完整矩阵的隔离或吞吐开销。
 
 \section{同事实离线比较}
 \begin{table}[htbp]\centering

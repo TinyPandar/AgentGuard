@@ -72,7 +72,7 @@ def main() -> int:
         errors.append(f"Cited integration source version has changed: {mismatches}")
     result = {"ok": not errors, "tex_files": len(visited), "abstract_characters_conservative": abstract_length,
               "references": len(bib), "source_files_checked": len(record["candidate_source_hashes"]),
-              "source_mismatches": mismatches, "compile_verified": False, "errors": errors}
+              "source_mismatches": mismatches, "check_scope": "tex_sources_and_runtime_version", "errors": errors}
     print(json.dumps(result, ensure_ascii=False, indent=2))
     return int(bool(errors))
 
