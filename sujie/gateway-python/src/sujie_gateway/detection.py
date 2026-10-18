@@ -112,9 +112,7 @@ def _strict_view(content: str) -> str:
 
 def _candidates(view: str) -> tuple[str, ...]:
     candidates = [view, view.translate(LOOKALIKES)]
-    unescaped = ESCAPED_UNICODE.sub(
-        lambda m: chr(int(m.group(1) or m.group(2), 16)), view
-    )
+    unescaped = ESCAPED_UNICODE.sub(lambda m: chr(int(m.group(1) or m.group(2), 16)), view)
     if unescaped != view:
         candidates.append(_strict_view(unescaped))
     for match in BASE64_FIELD.finditer(view):
@@ -205,6 +203,7 @@ def _finding(
         }
     )
 
+
 def detect_indirect(
     content: str, artifact_id: str, finding_id: str, *, attack_source: str = "INDIRECT"
 ) -> tuple[str, DetectionFinding | None]:
@@ -252,7 +251,5 @@ def detect_indirect_segments(
         result = _scan("".join(views)) or _scan(view)
     if result is None:
         return view, None
-    spans = [
-        {"artifact_id": sid, "start": 0, "end": len(value)} for sid, value in segments
-    ]
+    spans = [{"artifact_id": sid, "start": 0, "end": len(value)} for sid, value in segments]
     return view, _finding(spans, finding_id, segments[0][0], attack_source, result)
