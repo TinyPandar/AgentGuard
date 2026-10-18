@@ -1,0 +1,57 @@
+name: Submission LaTeX report
+
+on:
+  push:
+    paths:
+      - "competition/submission/latex/**"
+      - "competition/submission/tools/check_report_latex.py"
+      - ".github/workflows/submission-latex.yml"
+  pull_request:
+    paths:
+      - "competition/submission/latex/**"
+      - "competition/submission/tools/check_report_latex.py"
+      - ".github/workflows/submission-latex.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check sources and cited runtime version
+        run: python competition/submission/tools/check_report_latex.py
+      - name: Compile review PDF with XeLaTeX
+        uses: xu-cheng/latex-action@6549dc21effb2730855a1281407ecfcececc6c1b # v4
+        with:
+          root_file: main.tex
+          working_directory: competition/submission/latex
+          texlive_version: "2025"
+          latexmk_use_xelatex: true
+          latexmk_shell_escape: false
+          args: -file-line-error -halt-on-error -interaction=nonstopmode
+      - name: Check PDF size
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          pdf = Path("competition/submission/latex/main.pdf")
+          assert 0 < pdf.stat().st_size < 10_000_000, "PDF must be under 10MB"
+          print(f"Review PDF: {pdf.stat().st_size} bytes")
+          PY
+      - name: Upload review PDF and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sujie-m25-latex-review
+          path: |
+            competition/submission/latex/main.pdf
+            competition/submission/latex/main.log
+          if-no-files-found: ignore

@@ -32,6 +32,16 @@ target/
 .DS_Store
 competition/submission/dist/
 
+# LaTeX generated files; authored TeX remains versioned.
+competition/submission/latex/*.aux
+competition/submission/latex/*.toc
+competition/submission/latex/*.out
+competition/submission/latex/*.fls
+competition/submission/latex/*.fdb_latexmk
+competition/submission/latex/*.synctex.gz
+competition/submission/latex/*.xdv
+competition/submission/latex/*.pdf
+
 # Local validation archives and runtime state are handed over separately.
 competition/reviews/
 *.sqlite

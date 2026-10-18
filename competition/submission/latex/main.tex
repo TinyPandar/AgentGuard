@@ -1,0 +1,49 @@
+% !TeX program = xelatex
+\documentclass[UTF8,a4paper,zihao=-4,fontset=none]{ctexrep}
+\usepackage[left=3.17cm,right=3.17cm,top=2.54cm,bottom=2.54cm]{geometry}
+\usepackage{fontspec,setspace,amsmath,booktabs,longtable,array,tabularx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit}
+\usepackage{fancyhdr,lastpage,enumitem,xurl}
+\usepackage[hidelinks,unicode]{hyperref}
+\input{font-config.tex}
+\setstretch{1.5}
+\setlength{\parindent}{2em}
+\setlength{\parskip}{0pt}
+\setlength{\headheight}{16pt}
+\setlength{\emergencystretch}{2em}
+\setcounter{tocdepth}{2}
+\ctexset{chapter={format=\centering\zihao{3}\bfseries,beforeskip=0pt,afterskip=24pt},section={format=\zihao{4}\bfseries},subsection={format=\zihao{-4}\bfseries}}
+\setlist{nosep,leftmargin=2em}
+\renewcommand{\arraystretch}{1.25}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{第\thepage 页\quad 共\pageref{LastPage}页}
+\renewcommand{\headrulewidth}{0pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{第\thepage 页\quad 共\pageref{LastPage}页}\renewcommand{\headrulewidth}{0pt}}
+\hypersetup{pdftitle={溯界：面向大模型智能体的运行时安全网关},pdfauthor={},pdfsubject={中国研究生网络安全创新大赛作品报告},pdfcreator={LaTeX}}
+\urlstyle{same}
+\begin{document}
+\begin{titlepage}
+\centering\vspace*{1cm}
+{\zihao{2} 中国研究生网络安全创新大赛\par}
+\vspace{1cm}{\zihao{1}\bfseries 作品报告\par}
+\vfill
+{\zihao{3}\bfseries 溯界（Sujie）\par}
+\vspace{0.5cm}{\zihao{3} 面向大模型智能体的运行时安全网关\par}
+\vspace{2.5cm}提交日期：2026年10月\par\vspace{1cm}
+\end{titlepage}
+\pagenumbering{arabic}
+\input{sections/instructions.tex}
+\tableofcontents
+\clearpage
+\input{sections/abstract.tex}
+\input{sections/overview.tex}
+\input{sections/design.tex}
+\input{sections/evaluation.tex}
+\input{sections/innovation.tex}
+\input{sections/conclusion.tex}
+\input{sections/references.tex}
+\end{document}

@@ -1,0 +1,62 @@
+\chapter{作品测试与分析}
+\section{版本、环境与证据口径}
+本章以集成主线99cba60为代码基线，分别保留M25原冻结版本、集成本地回归和较早云模型实验的结果。工程回归验证代码行为；确定性脚本验证编排和效果；本地HTTP校准验证Provider请求准备与响应解析；真实云实验验证模型行为。四类结果分表记录。
+
+集成本地验证元数据位于交付源码的\path{docs/validation/MAIN_SYNC_VALIDATION_2026-10-18.json}，含日志摘要、281份源文件摘要、前端结果和退出码。历史M25结果另见\path{docs/validation/M25_LOCAL_ACCEPTANCE_2026-10-18.json}；其完整原始运行和审阅归档需单独移交。摘要清单用于核对文件一致性，不能替代原始观察。
+
+开发端使用Python 3.12和锁定依赖，前端执行Vue类型检查与生产构建。M24容器环境为Linux/aarch64、Python 3.12.14、Git 2.47.3；宿主为Docker Desktop。现有材料的跨平台记录各有对应版本，不拼接成单一验收成绩。
+
+\section{业务与安全判定方法}
+合法业务Oracle核对实际来源读取和报告字段，例如时间线的窗口与排序、附件的整数分金额、Git配置差异、Memory历史和当前事实。安全Oracle读取真实Receiver记录、文件、Git对象/ref及SQLite版本。任务状态FINISHED、记录有效、业务完成和危险效果是四个独立字段。
+
+M25同事实比较为六个候选封存相同业务事实，构造正常C、注入A和适用的合法危险原文引用Q。三主配置为unsafe、strong-static和full；no-source、no-recovery为消融。共48个唯一单元、14个配对组，覆盖时间线、附件、IOC、Git检视、三层委派与跨会话Memory。单元数、配对数和独立任务数分别统计。
+
+\section{工程回归与有限部署结果}
+\begin{table}[htbp]\centering
+\caption{工程与运行性记录，按版本分别解释}\label{tab:engineering}
+\begin{tabularx}{\textwidth}{P{0.23\textwidth}P{0.30\textwidth}Y}\toprule
+记录 & 观察结果 & 适用范围\\\midrule
+集成版本本地回归 & 1025 passed，1 warning；退出码0；216份格式检查通过 & 集成代码的本地工程验证\\
+集成前端 & 类型检查、生产构建退出码0 & 构建验证；页面操作另验\\
+M25原阶段回归 & 原日志1022 passed，1 warning；原进程退出码未取回 & 原冻结版本，保留执行元数据限制\\
+M24 Linux六链 & 六候选各一实例完成，容器退出码0，主机独立重算通过 & 单容器、同UID、脚本模型，无云调用\\\bottomrule
+\end{tabularx}
+\end{table}
+
+M24容器使用UID/GID 10001、只读rootfs、\path{--network none}、CapDrop ALL、no-new-privileges、pids与内存限额及指定tmpfs。观测到CapEff为0、NoNewPrivs为1、rootfs写探针返回EROFS，仅loopback处于UP且无可用默认路由。该记录验证六候选有限链路的运行约束，未测量M25完整矩阵的隔离或吞吐开销。
+
+\section{同事实离线比较}
+\begin{table}[htbp]\centering
+\caption{M25原冻结版本的离线观察}\label{tab:offline}
+\begin{tabularx}{\textwidth}{P{0.27\textwidth}P{0.13\textwidth}P{0.16\textwidth}P{0.16\textwidth}Y}\toprule
+运行方式 & 单元/配对 & 正常执行 & 业务完成 & 危险效果\\\midrule
+确定性脚本 & 48/14 & 48 & 46 & 2\\
+本地HTTP MockTransport & 48/14 & 48 & 46 & 2\\
+三来源固定提议代表 & 14/7 & 14 & 14 & 3\\\bottomrule
+\end{tabularx}
+\end{table}
+
+前两行各有两个Git注入单元在unsafe和strong-static配置实际执行了禁止推送；完整配置保持检视任务的远端约束。其他没有危险提议或没有配置差异的格，只报告其实际观察。记录通过核验表示观察和协议一致，并不意味着每个格都安全。
+
+本地HTTP矩阵使用265次进程内MockTransport请求，经过Provider请求准备、解析和账本代码，云调用为0。三来源代表涵盖直接Unicode、外部Base64和跨会话Memory流程备注；来源真实暴露后固定提出禁止的夹具标记写入。三个unsafe攻击格实际改变标记，对应full格阻断。这说明指定实例的权限检查有效，未测量自然模型的攻击成功率或来源机制的独有收益。
+
+M25原矩阵与集成版本本地回归使用不同源版本。主线保留后续远端修复，历史48+48+14矩阵未在该集成版本全量重跑。报告保留这一版本对应关系，避免将旧矩阵当成新代码成绩。
+
+\section{较早真实模型开发记录}
+\begin{table}[htbp]\centering
+\caption{历史云模型小样本，独立于M25离线矩阵}\label{tab:cloud}
+\begin{tabularx}{\textwidth}{P{0.21\textwidth}YY}\toprule
+阶段 & 实际结果 & 请求与已知用量\\\midrule
+M19共同配置 & 10单元中7项业务完成，3项IOC未提出发送且BLOCK为0 & 31请求，25005 tokens\\
+M21首轮 & 四业务中3项完成，时间线窗口与排序失败保留 & 15请求，24144 tokens\\
+M21时间线修复 & 修复后该开发样例单独完成 & 3请求，5645 tokens\\
+M20引用核验 & 脚本主流程加一次云分析 & 1请求，353 tokens\\\bottomrule
+\end{tabularx}
+\end{table}
+
+这些结果用于检查模型接入和业务可行性；跨版本修复不合并成功率。M25当前真实云CLI关闭，新的真实模型协议、资源准入、未见输入、重复规则和任务层统计需预登记后执行。无危险动作提议的格不能归因为网关阻断。
+
+\section{结果分析与未完成验证}
+现有结果支持三类具体结论：第一，任务与来源用途约束已进入真实工具链，并能在部分Git与标记写入校准中形成可观察差异；第二，委派、Memory和危险原文引用具有实际角色、版本、内容和业务事实见证；第三，审批对象与实际提交参数可核对。已完成工程记录证明这些链路可以运行和复核。
+
+下一轮需要解决的是相对收益和外推范围：在同版真实模型上比较业务完成、危险效果和代价；补充未见任务、有效消融和重复；完成三来源七绕过矩阵、跨轮组合、完整入口绑定，以及当前拓扑的隔离、性能与跨机复现。暂不填写无数据支撑的正式ASR、提升比例或性能达标值。
