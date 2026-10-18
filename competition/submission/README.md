@@ -19,7 +19,7 @@
 
 | # | 文件（`（队长姓名）+溯界+资料名称`） | 内容 | 状态 |
 |---|---|---|---|
-| 1 | 作品报告.pdf | 按官方模板七部分 | 草稿进行中 |
+| 1 | 作品报告.pdf | 按官方模板七部分（含封面/目录/页脚页码） | 草稿 v4，可生成 |
 | 2 | 原创性声明.pdf | 签名扫描 | 待办 |
 | 3 | 部署说明.pdf | 安装、启动、一键复现、已知限制 | 草稿 v1 |
 | 4 | 测试样例与流程说明.pdf | eval 协议/样例/Oracle/流程 | 草稿 v1 |
@@ -33,6 +33,7 @@
 - `部署说明-溯界.md`：部署与复现说明（含已知限制与未验收项）。
 - `测试样例与流程说明-溯界.md`：测试样例、Oracle、基线与复现流程。
 - `tools/build_report_docx.py`：Markdown→DOCX 转换脚本，套用官方格式（A4、宋体小四、1.5 倍行距）。构建产物输出到 `dist/`（已忽略）。
+- `tools/build_report_pdf.py`：Markdown→PDF 转换脚本，生成**封面页 + 目录 + “第 X 页 共 Y 页”页脚**，并**嵌入系统宋体**（Songti SC），无需阅读器自带字体。
 
 构建报告 Word：
 
@@ -41,6 +42,15 @@ cd competition/submission
 uv run --no-project --with python-docx python3 tools/build_report_docx.py \
   作品报告-溯界.md "dist/溯界-作品报告.docx"
 ```
+
+构建报告 PDF（当前 19 页、约 0.35MB，≤10MB 限制）：
+
+```sh
+uv run --no-project --with reportlab python3 tools/build_report_pdf.py \
+  作品报告-溯界.md "dist/溯界-作品报告.pdf"
+```
+
+> 说明：两个脚本均不复制官方模板中的“填写说明”页；正式提交前请按官方要求将文件命名为“队长姓名+作品名称+资料名称”，并确认全文不含身份信息。
 
 ## 术语纪律（全篇遵守）
 
