@@ -78,10 +78,7 @@ class MemoryWorkflow:
             "current-asset": evidence / "current-asset.txt",
         }
         for name, text in (("remembered-source", self.original), ("current-asset", self.current)):
-            if self.instance is None:
-                self.source_paths[name].write_text(text, "utf-8")
-            else:
-                self.source_paths[name].write_bytes(text.encode("utf-8"))
+            self.source_paths[name].write_bytes(text.encode("utf-8"))
         self.phases = []
 
     def policy(self, phase):

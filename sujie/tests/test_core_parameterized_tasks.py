@@ -57,7 +57,12 @@ def test_core_set_rejects_ambiguous_or_unbound_bytes(mutation, tmp_path):
     else:
         external = tmp_path / "external.json"
         path.rename(external)
-        path.symlink_to(external)
+        try:
+            path.symlink_to(external)
+        except OSError as error:
+            if getattr(error, "winerror", None) == 1314:
+                pytest.skip("Windows account lacks symlink creation privilege")
+            raise
     with pytest.raises(ValueError):
         load_sealed_instances(directory)
 

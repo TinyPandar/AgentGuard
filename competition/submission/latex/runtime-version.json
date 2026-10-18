@@ -1,0 +1,6 @@
+{
+  "schema": "sujie-report-source-binding-v1",
+  "source_commit": "99cba601111f82e7fdf9c43de060684cc5ec1282",
+  "validation_record": "docs/validation/MAIN_SYNC_VALIDATION_2026-10-18.json",
+  "validation_record_sha256": "063ad5a45df75223a21c3cae2220d6f95397211792015c55329817398cd2ec89"
+}

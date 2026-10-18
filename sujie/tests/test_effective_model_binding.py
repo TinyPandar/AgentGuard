@@ -681,7 +681,9 @@ def test_entrypoint_registry_matches_all_protected_constructors_and_excludes_leg
                     if isinstance(value, ast.Constant)
                     else "caller-selected-supported-purpose"
                 )
-                found.add((str(path.relative_to(root)), self.class_name, self.method_name, purpose))
+                found.add(
+                    (path.relative_to(root).as_posix(), self.class_name, self.method_name, purpose)
+                )
             self.generic_visit(node)
 
     for directory in ("control-plane-python", "demo-agent"):

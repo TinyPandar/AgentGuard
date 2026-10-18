@@ -71,6 +71,7 @@ export interface ContextRecord {
     event_type: string;
     sequence: number;
     metadata: {
+        conversation?: {index: number; role: string; content: string; truncated: boolean}[];
         purpose: string;
         code?: string;
         direction?: string;
@@ -155,7 +156,7 @@ export interface TaskSummary {
 export interface Artifact {
     artifact_id: string;
     content_hash: string;
-    origin: { type: string; source_id: string };
+    origin: { type: string; source_id: string; event_id?: string };
     authority: string;
     integrity: string;
     confidentiality: string;
@@ -220,6 +221,7 @@ export interface TaskDetail extends TaskSummary {
             observed_resources: string[];
             input_artifacts: string[];
             associated_findings: string[];
+            execution_event_ids?: string[];
         }[];
     };
     agent?: AgentRun;

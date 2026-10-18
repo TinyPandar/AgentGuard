@@ -1,5 +1,7 @@
 # 题目5：要求—实现—证据矩阵
 
+> 2026-10-18 新增[聊天控制台展示](CONSOLE_CHAT_CHECKPOINT.md)，未补齐三来源×七绕过矩阵，不改变本表历史证据结论。
+
 更新：2026-10-18，[M25](M25_STATUS.md)同事实比较与三来源有限代表已实施，脚本48格及来源14格已通过独立核验；完整离线HTTP状态以阶段总记录为准。全量原始日志记载1022 passed/1 warning、Ruff及216文件格式检查通过，用户中断后未取回进程退出码。整体研判见[M25与项目报告](../../competition/docs/M25_AND_OVERALL_REPORT_2026-10-18.md)；[M24](M24_STATUS.md)的893项及Linux六链保留历史验收边界。F3整体未完成，下一步见[M25安排](M25_NEXT_STEPS.md)。官方依据是[2026-10-14题目快照](../../competition/research/2026-10-14/topic5-official.json)，原始SHA-256 `d758dfe33aa17ce023d8538381d93bdb619fe2ad69fdbcc9593264b315360368`。下面历史证据仍按原阶段解释，不扩大为正式比较成绩。
 
 [已完成汇总](COMPLETED_WORK_SUMMARY.md) · [运行/代码/证据手册](PROJECT_HANDOFF.md) · [W0–W9状态](F2_IMPLEMENTATION_STATUS.md)

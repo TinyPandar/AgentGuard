@@ -1,5 +1,7 @@
 # 项目交接手册
 
+> 2026-10-18：[聊天控制台交接](CONSOLE_CHAT_CHECKPOINT.md)，包含启动和消息正文记录的数据处理变化；下文保留此前阶段记录。
+
 更新：2026-10-18。M21交接后已按用户要求继续至M25，同事实脚本比较与三来源有限代表已独立核验。先读[M25与项目总体报告](../../competition/docs/M25_AND_OVERALL_REPORT_2026-10-18.md)、[M25阶段记录](M25_STATUS.md)、[同事实比较专项](M25_MODEL_COMPARISON.md)和[来源代表专项](M25_SOURCE_BYPASS.md)，继续顺序见第7节及[M25安排](M25_NEXT_STEPS.md)。M24及以前证据保持原始版本。
 
 ## 1. 先读什么、以什么为准

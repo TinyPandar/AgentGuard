@@ -1,5 +1,7 @@
 # F3 当前实施状态（保留原 F2 文件名）
 
+> 2026-10-18 后续进度：[聊天控制台](CONSOLE_CHAT_CHECKPOINT.md)；完整覆盖矩阵、整体隔离和正式比较仍未验收。
+
 更新：2026-10-18。M25同事实比较与三来源有限代表已实施；48格脚本和14格来源代表已通过独立核验。全量原始日志记载1022 passed/1 warning（759.38秒）、Ruff及216文件格式检查通过；用户中断后未取回进程退出码。完整离线HTTP矩阵状态以[M25记录](M25_STATUS.md)为准，当前结论见[M25与项目总体报告](../../competition/docs/M25_AND_OVERALL_REPORT_2026-10-18.md)。此文件名为兼容旧链接保留；[M24记录](M24_STATUS.md)及其[统一验收](../../competition/reviews/2026-10-17-m24/quality-gates.json)保留893项、80/40/35格和Linux六链历史结果，不能当成M25新增代码验收。
 
 **四类业务在M21完成后曾停止，10月16日已按用户要求恢复开发；F3整体及正式主比较仍未完成。** 简要成果见[汇总](COMPLETED_WORK_SUMMARY.md)，运行/源码/证据版本见[交接手册](PROJECT_HANDOFF.md)，全部资料见[索引](DOCUMENT_INDEX.md)。

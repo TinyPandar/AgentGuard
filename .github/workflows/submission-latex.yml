@@ -5,11 +5,13 @@ on:
     paths:
       - "competition/submission/latex/**"
       - "competition/submission/tools/check_report_latex.py"
+      - "competition/submission/tools/test_check_report_latex.py"
       - ".github/workflows/submission-latex.yml"
   pull_request:
     paths:
       - "competition/submission/latex/**"
       - "competition/submission/tools/check_report_latex.py"
+      - "competition/submission/tools/test_check_report_latex.py"
       - ".github/workflows/submission-latex.yml"
   workflow_dispatch:
 
@@ -24,10 +26,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          # The report cites an immutable historical runtime, not the checkout HEAD.
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Check sources and cited runtime version
+      - name: Test report source binding
+        run: python -m unittest discover -s competition/submission/tools -p test_check_report_latex.py -v
+      - name: Check sources and cited runtime snapshot
         run: python competition/submission/tools/check_report_latex.py
       - name: Compile review PDF with XeLaTeX
         uses: xu-cheng/latex-action@6549dc21effb2730855a1281407ecfcececc6c1b # v4

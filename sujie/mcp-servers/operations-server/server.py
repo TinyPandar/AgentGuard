@@ -114,7 +114,7 @@ def write_file(resource: str, content: str) -> dict[str, object]:
         path = resolve(resource)
         temporary = path.parent / f".sujie-{secrets.token_hex(12)}.tmp"
         try:
-            temporary.write_text(content, encoding="utf-8")
+            temporary.write_bytes(content.encode("utf-8"))
             os.replace(temporary, path)
         finally:
             temporary.unlink(missing_ok=True)

@@ -1,5 +1,7 @@
 # 溯界（Sujie / AgentGuard）
 
+> 2026-10-18：新增[聊天控制台](sujie/docs/CONSOLE_CHAT_CHECKPOINT.md)，含实现、数据处理变化及验证边界；下文旧阶段记录保留。
+
 > **2026-10-18 交付进度：**M22—M25 代码已整合，M25 LaTeX 作品报告已通过 [PR #15](https://github.com/jiapengLi11/AgentGuard/pull/15) 合入 `main`。报告为17页、358882字节，已通过XeLaTeX构建和全页版式审阅；见[交付状态与剩余事项](competition/submission/LATEX_DELIVERY_REVIEW.md)。原 Release 仍为M21快照。各阶段实验保留原版本身份，本次代码整合验证见 [main 同步记录](docs/GITHUB_MAIN_SYNC_2026-10-18.md)。
 
 面向大模型智能体提示注入与工具滥用的运行时安全网关，用于中国研究生网络安全创新大赛题目5。模型提出动作，可信 Host/网关按任务契约、Grant、来源用途和 DSL 实施 **ALLOW / ASK / BLOCK**，记录真实副作用。

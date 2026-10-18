@@ -238,6 +238,15 @@ class ProtectedModel:
             "MODEL_REQUEST_CHECKED",
             {
                 **binding,
+                "conversation": [
+                    {
+                        "index": index,
+                        "role": message.get("role", "unknown"),
+                        "content": (message.get("content") or "")[:12000],
+                        "truncated": len(message.get("content") or "") > 12000,
+                    }
+                    for index, message in enumerate(snapshot.payload()["messages"])
+                ],
                 "fields": self._field_metadata(snapshot),
                 "effective_fields": self._field_metadata(effective) if effective else [],
                 "token_mapping": {

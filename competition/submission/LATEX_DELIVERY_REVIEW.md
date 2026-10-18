@@ -4,6 +4,8 @@
 
 [PR #15](https://github.com/jiapengLi11/AgentGuard/pull/15)已合入 `main`，合并提交为 `4457551`。队友可从主分支取得LaTeX工程；已验收PDF见[构建记录与产物](https://github.com/jiapengLi11/AgentGuard/actions/runs/39140488105)，下载 `sujie-m25-latex-review`。两项报告CI均通过。
 
+2026-10-19版本校验修订：报告继续对应`99cba60`，由`latex/runtime-version.json`固定完整提交ID与原验证记录摘要，检查该Git快照的281份源码。工作分支后续变化另列为差异；默认报告检查通过不验收这些新代码。`--require-current-source`仍严格拒绝当前工作区偏离报告基线。原验证JSON及论文实验数字均保留。聊天控制台已迁移到上游仓库的[PR #17](https://github.com/jiapengLi11/AgentGuard/pull/17)，旧PR #14关闭，额外DeepSeek接入已撤除；其验证独立记录。
+
 ## 已完成
 
 1. 新建可编辑的 LaTeX 工程：五章、摘要、11条文献、两张TikZ矢量图、两条机制公式、自动目录/引用/页码。
