@@ -9,10 +9,10 @@
 \node[wide,below=of commit] (result) {执行并观察实际效果；记录成功、失败或UNKNOWN};
 \draw[arr] (proposal)--(policy);
 \draw[arr] (policy)--(ask);
-\draw[arr] (policy.west)-|(block.north);
-\draw[arr] (policy.east)-|(allow.north);
+\draw[arr] (policy.south -| block.north)--(block.north);
+\draw[arr] (policy.south -| allow.north)--(allow.north);
 \draw[arr] (ask)--(commit);
-\draw[arr] (allow.south)|-(commit.east);
+\draw[arr] (allow.south)--(commit.north -| allow.south);
 \draw[arr] (commit)--(result);
 \end{tikzpicture}
 \caption{三态决策、动作绑定审批与执行前复核。BLOCK分支不进入执行。}\label{fig:decision}
