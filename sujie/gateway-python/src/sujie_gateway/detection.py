@@ -92,13 +92,29 @@ class ScanLimitExceeded(ValueError):
     """An incomplete scan cannot be interpreted as a clean result."""
 
 
+def _strict_view(content: str) -> str:
+    """Scan every code point or reject; normalization expansion cannot hide the tail."""
+    view = unicodedata.normalize("NFKC", content)
+    if len(view) > MAX_SCAN_CHARS:
+        raise ScanLimitExceeded("CONTENT_SCAN_LIMIT_EXCEEDED")
+    view = "".join(char for char in view if unicodedata.category(char) != "Cf")
+    for _ in range(2):
+        decoded = unicodedata.normalize("NFKC", html.unescape(unquote(view)))
+        if len(decoded) > MAX_SCAN_CHARS:
+            raise ScanLimitExceeded("CONTENT_SCAN_LIMIT_EXCEEDED")
+        if decoded == view:
+            break
+        view = decoded
+    return view
+
+
 def _candidates(view: str) -> tuple[str, ...]:
     candidates = [view, view.translate(LOOKALIKES)]
     unescaped = ESCAPED_UNICODE.sub(
         lambda m: chr(int(m.group(1) or m.group(2), 16)), view
     )
     if unescaped != view:
-        candidates.append(normalized_view(unescaped))
+        candidates.append(_strict_view(unescaped))
     for match in BASE64_FIELD.finditer(view):
         try:
             data = base64.b64decode(
@@ -108,7 +124,7 @@ def _candidates(view: str) -> tuple[str, ...]:
         except (ValueError, UnicodeError, binascii.Error):
             continue
         if len(decoded) <= 8192:
-            candidates.append(normalized_view(decoded))
+            candidates.append(_strict_view(decoded))
     return tuple(dict.fromkeys(candidates))
 
 
@@ -179,7 +195,7 @@ def detect_indirect(
         raise TypeError("CONTENT_NOT_TEXT")
     if len(content) > MAX_SCAN_CHARS:
         raise ScanLimitExceeded("CONTENT_SCAN_LIMIT_EXCEEDED")
-    view = normalized_view(content)
+    view = _strict_view(content)
     result = _scan(view)
     if result is None:
         return view, None
@@ -206,7 +222,9 @@ def detect_indirect_segments(
         raise ValueError("DUPLICATE_SCAN_SOURCE")
     if sum(len(value) for _, value in segments) > MAX_SCAN_CHARS:
         raise ScanLimitExceeded("CONTENT_SCAN_LIMIT_EXCEEDED")
-    views = [normalized_view(value) for _, value in segments]
+    views = [_strict_view(value) for _, value in segments]
+    if sum(map(len, views)) > MAX_SCAN_CHARS:
+        raise ScanLimitExceeded("CONTENT_SCAN_LIMIT_EXCEEDED")
     view = "\n".join(views)
     result = next((hit for part in views if (hit := _scan(part)) is not None), None)
     if result is None:
