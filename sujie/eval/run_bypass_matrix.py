@@ -11,7 +11,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "gateway-python/src"))
 
-from sujie_gateway.detection import DETECTOR_VERSION, detect_indirect, detect_indirect_segments  # noqa: E402
+from sujie_gateway.detection import (  # noqa: E402
+    DETECTOR_VERSION,
+    detect_indirect,
+    detect_indirect_segments,
+)
 from sujie_gateway.m1_runtime import new_id  # noqa: E402
 
 DATASET = ROOT / "eval/cases/bypass_matrix_v2.json"
@@ -28,10 +32,21 @@ def evaluate(path: Path = DATASET) -> dict:
         or len(dataset["cases"]) != 42
     ):
         raise ValueError("INVALID_BYPASS_MATRIX")
-    expected = {(source, family, attack) for source in sources for family in families for attack in (True, False)}
+    expected = {
+        (source, family, attack)
+        for source in sources
+        for family in families
+        for attack in (True, False)
+    }
     seen_ids, seen_cells = set(), set()
     confusion = {"tp": 0, "fn": 0, "fp": 0, "tn": 0}
-    grouped = {source: {family: {"tp": 0, "fn": 0, "fp": 0, "tn": 0} for family in families} for source in sources}
+    grouped = {
+        source: {
+            family: {"tp": 0, "fn": 0, "fp": 0, "tn": 0}
+            for family in families
+        }
+        for source in sources
+    }
     outcomes = []
     for item in dataset["cases"]:
         if (
@@ -51,20 +66,45 @@ def evaluate(path: Path = DATASET) -> dict:
         prefix = "benign log entry. " * prefix_repeat
         if "segments" in item:
             segments = item["segments"]
-            if not isinstance(segments, list) or not 2 <= len(segments) <= 32 or not all(isinstance(x, str) for x in segments):
+            if (
+                not isinstance(segments, list)
+                or not 2 <= len(segments) <= 32
+                or not all(isinstance(x, str) for x in segments)
+            ):
                 raise ValueError("INVALID_BYPASS_SEGMENTS")
-            entries = [(new_id(), prefix + value if index == 0 else value) for index, value in enumerate(segments)]
+            entries = [
+                (new_id(), prefix + value if index == 0 else value)
+                for index, value in enumerate(segments)
+            ]
             _, finding = detect_indirect_segments(entries, new_id(), attack_source=item["source"])
         else:
             if not isinstance(item["text"], str):
                 raise ValueError("INVALID_BYPASS_TEXT")
-            _, finding = detect_indirect(prefix + item["text"], new_id(), new_id(), attack_source=item["source"])
+            _, finding = detect_indirect(
+                prefix + item["text"], new_id(), new_id(), attack_source=item["source"]
+            )
         detected = finding is not None
-        outcome = "tp" if item["attack"] and detected else "fn" if item["attack"] else "fp" if detected else "tn"
+        outcome = (
+            "tp"
+            if item["attack"] and detected
+            else "fn"
+            if item["attack"]
+            else "fp"
+            if detected
+            else "tn"
+        )
         confusion[outcome] += 1
         grouped[item["source"]][item["family"]][outcome] += 1
-        outcomes.append({"id": item["id"], "source": item["source"], "family": item["family"],
-                         "attack": item["attack"], "detected": detected, "outcome": outcome.upper()})
+        outcomes.append(
+            {
+                "id": item["id"],
+                "source": item["source"],
+                "family": item["family"],
+                "attack": item["attack"],
+                "detected": detected,
+                "outcome": outcome.upper(),
+            }
+        )
     if seen_cells != expected:
         raise ValueError("INCOMPLETE_BYPASS_MATRIX")
     return {
