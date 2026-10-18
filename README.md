@@ -1,6 +1,6 @@
 # 溯界（Sujie / AgentGuard）
 
-> **2026-10-18 main 同步说明：**本次在现有 GitHub 历史上整合本地 M22—M25 源码与文档，并保留远端独有的修复、集成记录和提交草稿。下文测试与实验数字属于各自阶段版本，不代表本次合并版本已重新验收；本次变更与验证状态见 [main 同步记录](docs/GITHUB_MAIN_SYNC_2026-10-18.md)。[旧提交材料](competition/submission/README.md)及其 Release 附件尚未反映 M22—M25，不能作为当前版本成品。
+> **2026-10-18 交付进度：**M22—M25 代码已整合，M25 LaTeX 作品报告已通过 [PR #15](https://github.com/jiapengLi11/AgentGuard/pull/15) 合入 `main`。报告为17页、358882字节，已通过XeLaTeX构建和全页版式审阅；见[交付状态与剩余事项](competition/submission/LATEX_DELIVERY_REVIEW.md)。原 Release 仍为M21快照。各阶段实验保留原版本身份，本次代码整合验证见 [main 同步记录](docs/GITHUB_MAIN_SYNC_2026-10-18.md)。
 
 面向大模型智能体提示注入与工具滥用的运行时安全网关，用于中国研究生网络安全创新大赛题目5。模型提出动作，可信 Host/网关按任务契约、Grant、来源用途和 DSL 实施 **ALLOW / ASK / BLOCK**，记录真实副作用。
 
@@ -8,6 +8,7 @@
 
 ## 交接入口
 
+- **作品交付：**[LaTeX工程与编译说明](competition/submission/latex/README.md) / [交付验收清单](competition/submission/LATEX_DELIVERY_REVIEW.md) / [PDF构建产物](https://github.com/jiapengLi11/AgentGuard/actions/runs/39140488105)（登录GitHub后下载 `sujie-m25-latex-review`）。正式宋体、签名、M25原始证据移交、新环境运行和录屏仍待完成。
 - [M25与项目总体报告](competition/docs/M25_AND_OVERALL_REPORT_2026-10-18.md) / [M25阶段记录](sujie/docs/M25_STATUS.md)。
 - [同事实比较协议与边界](sujie/docs/M25_MODEL_COMPARISON.md) / [三来源代表](sujie/docs/M25_SOURCE_BYPASS.md)。
 - [M24实施与验收](sujie/docs/M24_STATUS.md)：四候选参数化、独立核验与生命周期修复；v1结果和最终v2分开记录。
