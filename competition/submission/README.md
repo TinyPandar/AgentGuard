@@ -28,6 +28,10 @@
 | 7 | 演示视频.mp4 | 答辩演示录屏 | 待录制（见 `演示脚本-溯界.md`） |
 
 > 产物均输出到 `dist/`（已 gitignore）；重新生成见下方命令。文件名中的「队长姓名」由团队在正式提交时替换。
+>
+> 成品快照已发布到 Release [`submission-2026-10-18`](https://github.com/jiapengLi11/AgentGuard/releases/tag/submission-2026-10-18)。**Release 附件使用 ASCII 文件名**（GitHub 附件上传端点不接受中文名），正式提交前请重命名为「队长姓名+作品名称+资料名称」。
+>
+> 跨平台：`build_report_pdf.py` 自动探测中文字体（macOS Songti / Windows SimSun / Linux Noto CJK），可用 `SUJIE_REPORT_FONT` 等环境变量覆盖。
 
 ## 本目录文件
 
