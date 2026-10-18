@@ -32,6 +32,15 @@
 - `作品报告-溯界.md`：作品报告草稿（含元信息块，正式 PDF 中删除）。
 - `部署说明-溯界.md`：部署与复现说明（含已知限制与未验收项）。
 - `测试样例与流程说明-溯界.md`：测试样例、Oracle、基线与复现流程。
+- `tools/build_report_docx.py`：Markdown→DOCX 转换脚本，套用官方格式（A4、宋体小四、1.5 倍行距）。构建产物输出到 `dist/`（已忽略）。
+
+构建报告 Word：
+
+```sh
+cd competition/submission
+uv run --no-project --with python-docx python3 tools/build_report_docx.py \
+  作品报告-溯界.md "dist/溯界-作品报告.docx"
+```
 
 ## 术语纪律（全篇遵守）
 
