@@ -84,7 +84,9 @@ QUOTED_TRAINING = re.compile(
     r".{0,200}(?:供分析|不要求执行|do\s+not\s+execute|for\s+analysis)",
     re.I | re.S,
 )
-LOOKALIKES = str.maketrans({"і": "i", "ӏ": "l", "о": "o", "а": "a", "е": "e", "р": "p", "с": "c", "ԁ": "d"})
+LOOKALIKES = str.maketrans(
+    {"і": "i", "ӏ": "l", "о": "o", "а": "a", "е": "e", "р": "p", "с": "c", "ԁ": "d"}
+)
 MAX_SEGMENTS = 32
 
 
@@ -158,8 +160,9 @@ def _scan(view: str) -> tuple[str, str] | None:
             CONCEALMENT_DIRECTIVE.search(candidate) or PARAMETER_REWRITE.search(candidate)
         )
         for match in AGENT_DIRECTIVE.finditer(candidate):
-            if match.group().lower().rstrip().endswith(("call", "use")) and SELF_TOOL_GUIDANCE.match(
-                candidate, match.end()
+            if (
+                match.group().lower().rstrip().endswith(("call", "use"))
+                and SELF_TOOL_GUIDANCE.match(candidate, match.end())
             ):
                 continue
             directive = True
@@ -171,21 +174,36 @@ def _scan(view: str) -> tuple[str, str] | None:
             pattern.search(fragment) for pattern in (*OVERRIDE_PATTERNS, *EXTRA_OVERRIDE_PATTERNS)
         ):
             return "CONTEXT_HIJACK", "untrusted_fragments_reconstruct_override"
-        if fragment and re.search(r"(?:拼接.{0,15}执行|解码后执行)", candidate) and SENSITIVE_EFFECT.search(fragment):
+        if (
+            fragment
+            and re.search(r"(?:拼接.{0,15}执行|解码后执行)", candidate)
+            and SENSITIVE_EFFECT.search(fragment)
+        ):
             return "TOOL_POISONING", "untrusted_fragments_direct_sensitive_effect"
     return None
 
 
-def _finding(spans: list[dict], finding_id: str, artifact_id: str,
-             attack_source: str, result: tuple[str, str]) -> DetectionFinding:
+def _finding(
+    spans: list[dict],
+    finding_id: str,
+    artifact_id: str,
+    attack_source: str,
+    result: tuple[str, str],
+) -> DetectionFinding:
     family, reason = result
-    return DetectionFinding({
-        "schema_version": "1.0", "finding_id": finding_id,
-        "attack_source": attack_source, "attack_family": family,
-        "spans": spans, "normalized_view": f"evidence://view/{artifact_id}/nfkc-v1",
-        "confidence": 0.8, "reasons": [reason], "detector_version": DETECTOR_VERSION,
-    })
-
+    return DetectionFinding(
+        {
+            "schema_version": "1.0",
+            "finding_id": finding_id,
+            "attack_source": attack_source,
+            "attack_family": family,
+            "spans": spans,
+            "normalized_view": f"evidence://view/{artifact_id}/nfkc-v1",
+            "confidence": 0.8,
+            "reasons": [reason],
+            "detector_version": DETECTOR_VERSION,
+        }
+    )
 
 def detect_indirect(
     content: str, artifact_id: str, finding_id: str, *, attack_source: str = "INDIRECT"
@@ -201,7 +219,10 @@ def detect_indirect(
         return view, None
     return view, _finding(
         [{"artifact_id": artifact_id, "start": 0, "end": len(content)}],
-        finding_id, artifact_id, attack_source, result,
+        finding_id,
+        artifact_id,
+        attack_source,
+        result,
     )
 
 
