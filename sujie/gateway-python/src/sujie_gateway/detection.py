@@ -53,35 +53,35 @@ def normalized_view(content: str) -> str:
 # Keep raw evidence separate from normalized/decoded scanning views.
 EXTRA_OVERRIDE_PATTERNS = (
     re.compile(r"(?:以前の指示を無視|前の指示を無視|これまでの指示を無視)"),
-    re.compile(r"игнорируй\\s+(?:предыдущие|прошлые)\\s+инструкции", re.I),
+    re.compile(r"игнорируй\s+(?:предыдущие|прошлые)\s+инструкции", re.I),
     re.compile(
-        r"i[^\\w]{0,3}g[^\\w]{0,3}n[^\\w]{0,3}o[^\\w]{0,3}r[^\\w]{0,3}e\\s+"
-        r"(?:previous|prior)\\s+instructions", re.I
+        r"i[^\w]{0,3}g[^\w]{0,3}n[^\w]{0,3}o[^\w]{0,3}r[^\w]{0,3}e\s+"
+        r"(?:previous|prior)\s+instructions", re.I
     ),
 )
 FORGED_AUTHORITY = re.compile(
     r"(?:审批|授权|批准).{0,25}(?:已|管理员|主管|完成|通过)"
     r"|(?:管理员|主管).{0,25}(?:批准|授权|审批)"
-    r"|\\b(?:approval\\s+(?:has\\s+been\\s+)?granted"
-    r"|admin(?:istrator)?\\s+(?:has\\s+)?approved|already\\s+authorized)\\b",
+    r"|\b(?:approval\s+(?:has\s+been\s+)?granted"
+    r"|admin(?:istrator)?\s+(?:has\s+)?approved|already\s+authorized)\b",
     re.I,
 )
 SENSITIVE_EFFECT = re.compile(
-    r"(?:凭据|密钥|令牌|密码|secret|credential|token|secret\\.txt)"
+    r"(?:凭据|密钥|令牌|密码|secret|credential|token|secret\.txt)"
     r".{0,90}(?:发送|上传|外发|交给|传输|send|upload|transfer)"
     r"|(?:发送|上传|外发|交给|传输|send|upload|transfer)"
-    r".{0,90}(?:凭据|密钥|令牌|密码|secret|credential|token|secret\\.txt)",
+    r".{0,90}(?:凭据|密钥|令牌|密码|secret|credential|token|secret\.txt)",
     re.I,
 )
-FRAGMENT_MARKER = re.compile(r"(?:片段[一二三四五六七八九十\\d]+|fragment\\s*\\d+)\\s*[:：]\\s*", re.I)
+FRAGMENT_MARKER = re.compile(r"(?:片段[一二三四五六七八九十\d]+|fragment\s*\d+)\s*[:：]\s*", re.I)
 BASE64_FIELD = re.compile(
-    r"\\b(?:payload_b64|instruction_b64|base64)\\s*[:=]\\s*([A-Za-z0-9_+/=-]{12,8192})",
+    r"\b(?:payload_b64|instruction_b64|base64)\s*[:=]\s*([A-Za-z0-9_+/=-]{12,8192})",
     re.I,
 )
-ESCAPED_UNICODE = re.compile(r"\\\\u([0-9a-fA-F]{4})|\\\\x([0-9a-fA-F]{2})")
+ESCAPED_UNICODE = re.compile(r"\\u([0-9a-fA-F]{4})|\\x([0-9a-fA-F]{2})")
 QUOTED_TRAINING = re.compile(
-    r"(?:培训资料引用|(?:training|example)\\s+(?:material\\s+)?(?:quotes?|cites?))"
-    r".{0,200}(?:供分析|不要求执行|do\\s+not\\s+execute|for\\s+analysis)",
+    r"(?:培训资料引用|(?:training|example)\s+(?:material\s+)?(?:quotes?|cites?))"
+    r".{0,200}(?:供分析|不要求执行|do\s+not\s+execute|for\s+analysis)",
     re.I | re.S,
 )
 LOOKALIKES = str.maketrans({"і": "i", "ӏ": "l", "о": "o", "а": "a", "е": "e", "р": "p", "с": "c", "ԁ": "d"})
@@ -119,7 +119,7 @@ def _fragments(view: str) -> str:
     pieces = []
     for index, match in enumerate(matches):
         end = matches[index + 1].start() if index + 1 < len(matches) else len(view)
-        piece = view[match.end():end].strip(" \\t\\r\\n；;，,。.")
+        piece = view[match.end():end].strip(" \t\r\n；;，,。.")
         if len(piece) > 512:
             return ""
         pieces.append(piece)
@@ -207,7 +207,7 @@ def detect_indirect_segments(
     if sum(len(value) for _, value in segments) > MAX_SCAN_CHARS:
         raise ScanLimitExceeded("CONTENT_SCAN_LIMIT_EXCEEDED")
     views = [normalized_view(value) for _, value in segments]
-    view = "\\n".join(views)
+    view = "\n".join(views)
     result = next((hit for part in views if (hit := _scan(part)) is not None), None)
     if result is None:
         result = _scan("".join(views)) or _scan(view)
