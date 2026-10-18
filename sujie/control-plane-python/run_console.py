@@ -1,6 +1,7 @@
 """Launch the local operator console; generate a credential outside Agent environments."""
 
 import argparse
+import os
 import secrets
 import socket
 import sys
@@ -13,11 +14,18 @@ import uvicorn  # noqa: E402
 from sujie_control.api import create_app  # noqa: E402
 from sujie_control.model_runner import MODEL_SNAPSHOT  # noqa: E402
 from sujie_demo_agent.bailian_agent import BailianChatModel, BailianCredentials  # noqa: E402
+from sujie_demo_agent.deepseek_agent import (  # noqa: E402
+    DEFAULT_MODEL,
+    DeepSeekChatModel,
+    DeepSeekCredentials,
+)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=8765)
+    parser.add_argument("--provider", choices=["bailian", "deepseek"], default="bailian")
+    parser.add_argument("--model", help="Provider model ID; defaults to the provider's model")
     parser.add_argument("--model-budget-file", type=Path, help="Persistent shared budget ledger")
     parser.add_argument("--max-provider-requests", type=int, default=60)
     parser.add_argument("--max-reservation-units", type=int, default=1_000_000)
@@ -41,14 +49,30 @@ def main() -> None:
         if probe.connect_ex(("127.0.0.1", args.port)) == 0:
             parser.error("PORT_ALREADY_IN_USE")
     model_factory = None
-    if args.credentials_file:
+    model_name = args.model or (DEFAULT_MODEL if args.provider == "deepseek" else MODEL_SNAPSHOT)
+    if args.provider == "deepseek":
+        if args.credentials_file:
+            parser.error("DeepSeek uses DEEPSEEK_API_KEY, not --credentials-file")
+        try:
+            credentials = DeepSeekCredentials.from_env()
+            DeepSeekChatModel(credentials, model=model_name)
+        except ValueError:
+            parser.error("DEEPSEEK_CONFIG_INVALID: set DEEPSEEK_API_KEY and a deepseek- model ID")
+        # MCP children inherit a minimal environment in StdioMCPProxy. Remove
+        # this process environment entry too; only the trusted provider retains it.
+        os.environ.pop("DEEPSEEK_API_KEY", None)
+
+        def model_factory():
+            return DeepSeekChatModel(credentials, model=model_name)
+
+    elif args.credentials_file:
         try:
             credentials = BailianCredentials.from_csv(args.credentials_file)
         except (OSError, ValueError):
             parser.error("MODEL_CREDENTIALS_INVALID")
 
         def model_factory():
-            return BailianChatModel(credentials, model=MODEL_SNAPSHOT)
+            return BailianChatModel(credentials, model=model_name)
 
     token = secrets.token_urlsafe(32)
     credential = (
@@ -71,6 +95,7 @@ def main() -> None:
             token,
             dist_dir=dist,
             model_factory=model_factory,
+            model_name=model_name,
             model_budget_path=budget_path,
             max_provider_requests=args.max_provider_requests,
             max_reservation_units=args.max_reservation_units,

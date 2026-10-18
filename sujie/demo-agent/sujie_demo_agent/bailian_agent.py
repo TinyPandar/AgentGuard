@@ -78,6 +78,14 @@ class DelegationHandler(Protocol):
 
 
 class BailianChatModel:
+    provider_code = "BAILIAN"
+
+    def valid_model(self, model: str) -> bool:
+        return model.startswith("qwen-")
+
+    def extra_payload(self) -> dict:
+        return {}
+
     def __init__(
         self,
         credentials: BailianCredentials,
@@ -86,7 +94,7 @@ class BailianChatModel:
         max_tokens: int = 512,
         timeout: float = 30.0,
     ) -> None:
-        if not model.startswith("qwen-") or not 64 <= max_tokens <= 2048:
+        if not self.valid_model(model) or not 64 <= max_tokens <= 2048:
             raise ValueError("INVALID_MODEL_CONFIG")
         self._credentials = credentials
         self.model = model
@@ -102,6 +110,7 @@ class BailianChatModel:
             "max_tokens": self.max_tokens,
             "temperature": 0,
         }
+        payload.update(self.extra_payload())
         if tools:
             payload.update({"tools": tools, "tool_choice": "auto"})
         try:
@@ -118,9 +127,9 @@ class BailianChatModel:
                     json=payload,
                 )
         except httpx.RequestError:
-            raise ModelProtocolError("BAILIAN_TRANSPORT_ERROR") from None
+            raise ModelProtocolError(f"{self.provider_code}_TRANSPORT_ERROR") from None
         if response.status_code != 200:
-            raise ModelProtocolError(f"BAILIAN_HTTP_{response.status_code}")
+            raise ModelProtocolError(f"{self.provider_code}_HTTP_{response.status_code}")
         try:
             body = response.json()
             message = body["choices"][0]["message"]
@@ -139,7 +148,7 @@ class BailianChatModel:
                 raise ModelProtocolError("MODEL_OUTPUT_CREDENTIAL")
             return message
         except (ValueError, KeyError, IndexError, TypeError):
-            raise ModelProtocolError("BAILIAN_RESPONSE_INVALID") from None
+            raise ModelProtocolError(f"{self.provider_code}_RESPONSE_INVALID") from None
 
 
 TOOL_NAMES = (

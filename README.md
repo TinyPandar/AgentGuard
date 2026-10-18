@@ -1,5 +1,7 @@
 # 溯界（Sujie / AgentGuard）
 
+> 2026-10-18：新增[DeepSeek与聊天控制台](sujie/docs/CONSOLE_DEEPSEEK_CHECKPOINT.md)，含实现、数据处理变化及验证边界；下文旧阶段记录保留。
+
 > 当前为团队协作集成分支 `integration/teammate-m21`，接收同事提供的 M21 源码快照；尚未合入 `main`。
 > 队友拉取、开发分支、安装验证及未公开证据的说明见 [M21 集成交接](docs/INTEGRATION_M21.md)。
 > 以下阶段记录来自原交付，历史测试与云实验结果不代表本次上传已重新运行。

@@ -1,5 +1,7 @@
 # 题目5：要求—实现—证据矩阵
 
+> 2026-10-18 新增[聊天控制台与DeepSeek展示](CONSOLE_DEEPSEEK_CHECKPOINT.md)，未补齐三来源×七绕过矩阵，不改变本表历史证据结论。
+
 更新：2026-10-15，截至M21。官方依据是[2026-10-14题目快照](../../competition/research/2026-10-14/topic5-official.json)，原始SHA-256 `d758dfe33aa17ce023d8538381d93bdb619fe2ad69fdbcc9593264b315360368`。本轮为文档交接，没有重新核验赛事通知，提交前应核对官方最新信息。
 
 [已完成汇总](COMPLETED_WORK_SUMMARY.md) · [运行/代码/证据手册](PROJECT_HANDOFF.md) · [W0–W9状态](F2_IMPLEMENTATION_STATUS.md)

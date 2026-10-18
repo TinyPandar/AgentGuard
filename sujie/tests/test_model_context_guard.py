@@ -23,6 +23,46 @@ from test_operator_api import HEADERS, TOKEN, create_task
 ROOT = Path(__file__).resolve().parents[1]
 
 
+@pytest.mark.asyncio
+async def test_conversation_preview_is_bounded_and_blocked_input_is_not_recorded():
+    from sujie_control.runtime import TaskManager
+
+    class SafeModel:
+        async def complete(self, messages, tools):
+            return {"content": "safe"}
+
+    manager = TaskManager()
+    view = await manager.create("conversation-preview-test", "report", "clean")
+    session = manager.get(view["id"])
+    try:
+        protected = ProtectedModel(
+            SafeModel(), session.gateway, protected_values=(session.honeytoken,)
+        )
+        text = "safe evidence " * 1000
+        await protected.complete([{"role": "user", "content": text}], [])
+        records = [
+            session.gateway.trace.payloads[event["event_id"]]
+            for event in session.gateway.trace.events
+            if event["event_type"] == "MODEL_REQUEST_CHECKED"
+        ]
+        assert records[-1]["conversation"] == [
+            {"index": 0, "role": "user", "content": text[:12000], "truncated": True}
+        ]
+        count = len(records)
+        with pytest.raises(ModelProtocolError):
+            await protected.complete([{"role": "user", "content": session.honeytoken}], [])
+        assert (
+            sum(
+                event["event_type"] == "MODEL_REQUEST_CHECKED"
+                for event in session.gateway.trace.events
+            )
+            == count
+        )
+        assert session.honeytoken not in json.dumps(records)
+    finally:
+        await manager.close()
+
+
 def test_snapshot_is_immutable_and_maps_json_escaping_to_original_characters():
     original = '文档 "引文"\nрусский🙂'
     source = ContextSource("source-a", original)

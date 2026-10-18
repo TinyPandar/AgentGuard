@@ -1,5 +1,7 @@
 # F3 当前实施状态（保留原 F2 文件名）
 
+> 2026-10-18 后续进度：[DeepSeek与聊天控制台](CONSOLE_DEEPSEEK_CHECKPOINT.md)；完整覆盖矩阵、整体隔离和正式比较仍未验收。
+
 更新：2026-10-15，截至M21四业务验收与协议索引修正。此文件名为兼容旧链接保留，当前计划是[F3](../../competition/docs/SUJIE_REVIEW_AND_PLAN_F3.md)。
 
 **四类业务已实现并按用户要求停止；F3整体未完成。本次为文档交接，不恢复剩余开发。** 简要成果见[汇总](COMPLETED_WORK_SUMMARY.md)，运行/源码/证据版本见[交接手册](PROJECT_HANDOFF.md)，全部资料见[索引](DOCUMENT_INDEX.md)。
