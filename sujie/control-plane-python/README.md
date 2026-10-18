@@ -18,21 +18,6 @@
 
 ## 当前能力
 
-### DeepSeek（本地接入扩展）
-
-在启动服务的终端设置 `DEEPSEEK_API_KEY`，然后从 `sujie/` 执行：
-
-```powershell
-.\.venv\Scripts\python.exe control-plane-python/run_console.py --provider deepseek --port 8767
-```
-
-默认模型为 `deepseek-flash`，可用 `--model deepseek-模型名称` 指定账号可用的模型。
-固定使用官方 `https://api.deepseek.com/chat/completions`，非思考模式，输出上限1024、超时60秒。
-密钥仅由可信Provider持有，服务加载后清除自身环境变量，不写入页面、日志或导出。
-操作者登录凭据为 `.control-runtime/operator-token-8767.txt`，不是API密钥。
-网关、来源、审批及共享预算仍由原Host管理。不要把DeepSeek运行结果记作原Qwen实验成绩。
-当前接口适配有模拟HTTP测试；真实账号连通与业务完成须在提供密钥后另行验证。
-
 13个开发profile及适用场景见手册；其中M21的时间线、Issue、附件、知识冲突支持 `quoted`，其他profile拒绝该场景。主入口为 `sujie_control/api.py`，模板/生命周期在 `profiles.py`、`runtime.py`、`model_runner.py`，业务判定在 `business_oracles.py`，时间线查询在 `timeline_query.py`。
 
 IOC/Git模型可暂停→批准→提交→续跑；批准本身不执行。仅eval支持五配置切换，操作者HTTP不接受该开关。来源/DAG、完整记录提议序列、子Agent、Memory、业务读取/报告状态及脱敏导出均来自实际后端。

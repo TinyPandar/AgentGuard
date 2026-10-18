@@ -188,7 +188,15 @@ const selectedRequestId = ref("");
 const selectedInputField = ref(0);
 const contextRequests = computed(() => contextAudit.value?.records.filter(r => r.event_type === "MODEL_REQUEST_CHECKED") ?? []);
 const currentContext = computed(() => contextRequests.value.find(r => r.event_id === selectedRequestId.value) ?? contextRequests.value.at(-1));
-const contextFields = computed(() => currentContext.value?.metadata.fields?.filter(f => ["content", "arguments", "description"].includes(String(f.path.at(-1)))) ?? []);
+const contextFields = computed(() => {
+    const metadata = currentContext.value?.metadata;
+    const fields = metadata?.token_mapping?.scope === "HTTP_JSON_BODY_STRING_FIELDS" ? metadata.effective_fields : metadata?.fields;
+    return fields?.filter(f => ["content", "arguments", "description"].includes(String(f.path.at(-1)))) ?? [];
+});
+const currentResponse = computed(() => {
+    const callId = currentContext.value?.metadata.call_id;
+    return callId ? contextAudit.value?.records.find(r => r.event_type === "MODEL_RESPONSE_CHECKED" && r.metadata.call_id === callId) : undefined;
+});
 const currentInputField = computed(() => contextFields.value.find(f => f.field_index === selectedInputField.value) ?? contextFields.value[0]);
 const conversationRows = computed(() => {
     const groups = new Map<number, typeof contextFields.value>();
@@ -875,7 +883,7 @@ const graph = computed(() => {
                             {{ modelConfig.remaining_runs }} 次启动机会
                         </p>
                         <p class="meta" v-else>
-                            尚未配置模型。启动服务时配置百炼凭据，或选择 DeepSeek 并设置 API Key 后可运行。
+                            尚未配置模型。启动服务时指定百炼凭据文件后可运行。
                         </p>
                         <p class="meta" v-if="modelConfig?.shared_budget">
                             共享模型预算：剩余{{ modelConfig.shared_budget.remaining_requests }}次后端调用；
@@ -1150,7 +1158,16 @@ const graph = computed(() => {
                                 <label>请求快照<select v-model="selectedRequestId" @change="resetInputField"><option v-for="record in contextRequests" :key="record.event_id" :value="record.event_id">#{{ record.sequence }} · {{ record.metadata.purpose }} · {{ short(record.subject_id || '') }}</option></select></label>
                                 <label>文本字段<select v-model="selectedInputField"><option v-for="field in contextFields" :key="field.field_index" :value="field.field_index">{{ field.path.join('.') }} · {{ field.characters }}字符</option></select></label>
                             </div>
-                            <p class="meta">请求摘要 {{ currentContext?.metadata.request_hash }} · {{ currentContext?.metadata.token_mapping?.status }}</p>
+                            <p class="meta">检查范围：{{ currentContext?.metadata.binding_scope === 'HTTP_JSON_BODY' ? '完整 HTTP JSON 请求体' : '消息与工具定义' }} · 本地 token 映射 {{ currentContext?.metadata.token_mapping?.status }}</p>
+                            <p class="meta">消息与工具摘要 {{ currentContext?.metadata.request_hash }}</p>
+                            <template v-if="currentContext?.metadata.effective_request_hash">
+                                <p class="meta">HTTP 请求体摘要 {{ currentContext.metadata.effective_request_hash }} · {{ currentContext.metadata.effective_request_bytes }} 字节</p>
+                            </template>
+                            <p v-if="currentContext?.metadata.call_id" class="meta">调用 {{ currentContext.metadata.call_id }} · 预算记录 {{ currentContext.metadata.budget_ticket }}</p>
+                            <template v-if="currentResponse">
+                                <p class="meta">返回消息摘要 {{ currentResponse.metadata.response_hash }}</p>
+                                <p v-if="currentResponse.metadata.provider_receipt?.raw_response_hash" class="meta">HTTP 解码响应体摘要 {{ currentResponse.metadata.provider_receipt.raw_response_hash }} · 状态 {{ currentResponse.metadata.provider_receipt.http_status }}</p>
+                            </template>
                             <p v-if="!inputTokens.length" class="caption">当前仅有字符区间；本地token映射不可用或该字段为空。</p>
                             <div class="token-table-wrap" v-else>
                                 <table class="token-table"><thead><tr><th>本地token</th><th>字符区间</th><th>UTF-8字节</th><th>映射类型</th><th>关联来源</th></tr></thead><tbody>

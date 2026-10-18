@@ -1,16 +1,15 @@
 # 参与开发与交接约定
 
-更新：2026-10-15。当前主线是 `sujie/`，根目录 `agentguard/` 是历史原型。
-先读[交接手册](sujie/docs/PROJECT_HANDOFF.md)、[当前状态](sujie/docs/F2_IMPLEMENTATION_STATUS.md)和[文档索引](sujie/docs/DOCUMENT_INDEX.md)。四业务完成后已按用户要求停止；接手不自动恢复全部旧计划。本轮只更新文档。
+更新：2026-10-18。比赛主线是 `sujie/`，根目录 `agentguard/` 是历史原型；GitHub协作以 `main` 为基础。
+先读[交接手册](sujie/docs/PROJECT_HANDOFF.md)、[M25阶段记录](sujie/docs/M25_STATUS.md)、[M26计划](sujie/docs/M26_PLAN.md)和[文档索引](sujie/docs/DOCUMENT_INDEX.md)。M21停止记录属于历史，M22—M25已继续实施；后续工作按当前计划和用户授权进行。本次整合的改动与验证状态见[main同步记录](docs/GITHUB_MAIN_SYNC_2026-10-18.md)。
 
 ## 开发与验证
 
-- 本轮共同开发起点为 `integration/teammate-m21`；从该分支建立个人 `feat/`、`fix/` 或 `docs/` 分支，PR 暂以集成分支为目标。集成验收后再恢复以 `main` 为起点。参见[集成交接](docs/INTEGRATION_M21.md)。
-
+- 先查看 `git status --short`，保留他人未提交改动；从最新 `main` 建立短期 `feat/`、`fix/` 或 `docs/` 分支，PR以 `main` 为目标。原 `integration/teammate-m21` 的过程见[历史集成记录](docs/INTEGRATION_M21.md)，不再作为新协作起点。
 - 在 `sujie/` 使用Python3.12；按 `requirements.lock` 创建独立环境；前端按 `package-lock.json` 安装。完整命令见交接手册。
 - Python修改运行 `python dev.py check`；针对改动补有意义的正常/拒绝/实际副作用检查。前端修改运行 `npm run build`，交互变更还需相应实际界面验证。
-- 隔离/网络边界变更需在目标Linux环境验收相应拓扑。旧 `sh deploy/run_m1_container_test.sh` 只验M1；当前新版整体拓扑尚未验收，缺环境时如实记录。
-- 不覆盖用户改动、运行任务、旧报告、预算账本或冻结协议。原交付是无 Git 历史的源码快照，现已导入现有仓库；以当前 Git 状态和远端分支为准。
+- 隔离/网络边界变更需在目标Linux环境验收相应拓扑。旧 `sh deploy/run_m1_container_test.sh` 只验M1；M24已有受限单容器六链校准，不能替代当前完整工具/角色隔离与性能验收，缺环境时如实记录。
+- 不覆盖用户改动、运行任务、旧报告、预算账本或冻结协议；不使用强制推送改写 `main` 历史。原本地交付曾不含Git历史，本次导入保留已有仓库历史，不虚构中间开发提交或作者身份。
 
 ## 安全与证据纪律
 

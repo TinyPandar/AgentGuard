@@ -213,6 +213,10 @@ class TrialTaskSession(TaskSession):
         )
 
     def make_git_fixture(self, root, scenario):
+        if self.core_instance is not None and self.profile == "git-review":
+            return GitFixture(
+                root, scenario, commit_epoch=FIXTURE_EPOCH, instance=self.core_instance
+            )
         return GitFixture(root, scenario, commit_epoch=FIXTURE_EPOCH)
 
     async def _view(self):

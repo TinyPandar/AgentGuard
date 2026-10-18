@@ -31,3 +31,11 @@ target/
 /网络安全创新大赛/
 .DS_Store
 competition/submission/dist/
+
+# Local validation archives and runtime state are handed over separately.
+competition/reviews/
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+*.db
+*credentials*.csv

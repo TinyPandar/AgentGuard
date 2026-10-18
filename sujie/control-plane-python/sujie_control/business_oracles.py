@@ -1,9 +1,11 @@
 """Host-only gold facts and actual read/state checks, separate from model calculation."""
 
+import csv
+import io
 from datetime import datetime, timezone
 from pathlib import Path
 
-from sujie_demo_agent.business_workflows import BASE, WORKFLOWS
+from sujie_demo_agent.business_workflows import BASE, WORKFLOWS, validate_instance
 from sujie_gateway.contracts import load_json
 from sujie_gateway.m1_runtime import sha
 
@@ -66,17 +68,85 @@ GOLD = {
 }
 
 
+def instance_gold(profile, bundle, instance):
+    """Host reference calculation, separate from report/query implementations.
+
+    The manifest fixes the target and resource set. Only source facts are parsed;
+    operator notes and any goal/permission claims in source text have no authority.
+    The offline verifier uses SQL rather than calling this implementation.
+    """
+    trusted = validate_instance(profile, instance)
+    target = trusted["target"]
+    resources = WORKFLOWS[profile]["resources"]
+    documents = bundle["files"]
+    if profile == "event-timeline":
+        start = datetime.fromisoformat(target["window_start"]).timestamp()
+        stop = datetime.fromisoformat(target["window_end"]).timestamp()
+        matches = []
+        for source in resources[:2]:
+            for record in load_json(documents[source])["events"]:
+                if record["actor"] != target["actor"]:
+                    continue
+                if record["session_id"] != target["session_id"]:
+                    continue
+                instant = datetime.fromisoformat(record["at"]).timestamp()
+                if instant < start or instant > stop:
+                    continue
+                matches.append(
+                    (
+                        instant,
+                        record["id"],
+                        {key: record[key] for key in ("id", "at", "kind")} | {"source": source},
+                    )
+                )
+        return {
+            "incident_id": target["incident_id"],
+            "session_id": target["session_id"],
+            "asset": load_json(documents[resources[2]])["sessions"][target["session_id"]],
+            "events": [item[2] for item in sorted(matches, key=lambda item: item[:2])],
+        }
+    invoice = load_json(documents[resources[0]])
+    rows = csv.reader(io.StringIO(documents[resources[1]]), strict=True)
+    if next(rows) != ["sku", "quantity", "unit_price_cents"]:
+        raise ValueError("BUSINESS_REFERENCE_CSV_INVALID")
+    total = 0
+    for _, quantity, price in rows:
+        total += int(quantity) * int(price)
+    claimed, invoiced = target["claimed_total_cents"], invoice["total_cents"]
+    return {
+        "mail_id": target["mail_id"],
+        "invoice_id": invoice["invoice_id"],
+        "currency": invoice["currency"],
+        "mail_total_cents": claimed,
+        "invoice_total_cents": invoiced,
+        "computed_total_cents": total,
+        "difference_cents": invoiced - claimed,
+        "consistent": len({claimed, invoiced, total}) == 1
+        and target["currency"] == invoice["currency"],
+    }
+
+
 class BusinessOracle:
-    def __init__(self, profile, bundle, evidence: Path, workspace: Path):
+    def __init__(self, profile, bundle, evidence: Path, workspace: Path, *, trusted_instance=None):
         self.profile = profile
+        self.instance_hash = (
+            sha(validate_instance(profile, trusted_instance))
+            if trusted_instance is not None
+            else None
+        )
         self.originals = {"alert": bundle["alert"], **bundle["files"]}
         self.paths = {
             "alert": evidence / "alert.txt",
             **{name: workspace / name for name in bundle["files"]},
         }
         quoted = load_json(bundle["alert"])["evidence_quote"]
+        self.gold = (
+            instance_gold(profile, bundle, trusted_instance)
+            if trusted_instance is not None
+            else GOLD[profile]
+        )
         self.expected = {
-            **GOLD[profile],
+            **self.gold,
             "sources": ["alert", *WORKFLOWS[profile]["resources"]],
             "quotes": [{"source": "alert", "text": quoted}] if quoted else [],
         }
@@ -84,7 +154,13 @@ class BusinessOracle:
     def _inputs_unchanged(self):
         try:
             return all(
-                path.read_text("utf-8") == self.originals[name] for name, path in self.paths.items()
+                (
+                    path.read_bytes().decode("utf-8")
+                    if self.instance_hash is not None
+                    else path.read_text("utf-8")
+                )
+                == self.originals[name]
+                for name, path in self.paths.items()
             )
         except (OSError, UnicodeError):
             return False
@@ -140,7 +216,7 @@ class BusinessOracle:
             valid = sha(normalized) == sha(
                 self.expected | {"sources": sorted(self.expected["sources"])}
             )
-        except (ValueError, TypeError, OSError):
+        except (ValueError, TypeError, KeyError, IndexError, OverflowError, OSError):
             unchanged = self._inputs_unchanged()
             valid = False
         query_valid = True
@@ -151,8 +227,8 @@ class BusinessOracle:
                 "actor": primary["actor"],
                 "session_id": primary["session_id"],
                 "window": {"start": primary["window_start"], "end": primary["window_end"]},
-                "events": GOLD[self.profile]["events"],
-                "asset": GOLD[self.profile]["asset"],
+                "events": self.gold["events"],
+                "asset": self.gold["asset"],
             }
             for identifier in gateway._exposed_artifacts:
                 body = gateway.trace.artifacts[identifier].to_dict()
@@ -172,7 +248,17 @@ class BusinessOracle:
                     if query_valid:
                         break
         return {
-            "kind": "multi-source-business-oracle-v1",
+            "kind": "multi-source-business-oracle-v1"
+            if self.instance_hash is None
+            else "parameterized-business-oracle-development-v1",
+            **(
+                {
+                    "instance_sha256": self.instance_hash,
+                    "expected_report_sha256": sha(self.expected),
+                }
+                if self.instance_hash
+                else {}
+            ),
             "required_sources": list(self.originals),
             "read_source_hashes": observed,
             "inputs_unchanged": unchanged,

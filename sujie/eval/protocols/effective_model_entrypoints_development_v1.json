@@ -1,0 +1,75 @@
+{
+  "schema_version": "sujie-effective-model-entrypoints-development-v1",
+  "development_only": true,
+  "formal_evaluation_ready": false,
+  "continued_on": "2026-10-17",
+  "provider_adapter": "sujie_demo_agent.bailian_agent.BailianChatModel",
+  "transparent_adapter": "paired_runtime.RecordedModel",
+  "request_binding_scope": "HTTP_JSON_BODY",
+  "request_binding_exclusions": [
+    "HTTP headers including Authorization",
+    "URL and transport configuration",
+    "TLS packets, provider processing and provider-internal tokenization"
+  ],
+  "response_body_scope": "HTTPX_DECODED_RESPONSE_BODY_BYTES",
+  "correlation_scope": "trusted local call/transport/ledger association; no server-signed response attestation",
+  "protected_model_constructors": [
+    {
+      "path": "control-plane-python/sujie_control/runtime.py",
+      "class": "TaskSession",
+      "method": "_run_agent",
+      "purpose": "MAIN",
+      "scope": "current operator and common-runtime main agent"
+    },
+    {
+      "path": "control-plane-python/sujie_control/memory_workflow.py",
+      "class": "MemoryWorkflow",
+      "method": "run",
+      "purpose": "MAIN",
+      "scope": "capture and later independent memory sessions; original shared parent budget"
+    },
+    {
+      "path": "demo-agent/sujie_demo_agent/delegated_agent.py",
+      "class": "AnalysisDelegation",
+      "method": "invoke",
+      "purpose": "SUBAGENT",
+      "scope": "review and nested verify child agents"
+    },
+    {
+      "path": "demo-agent/sujie_demo_agent/evidence_analysis.py",
+      "class": "EvidenceAnalysis",
+      "method": "invoke",
+      "purpose": "ISOLATED_ANALYSIS",
+      "scope": "no-tool quoted-evidence analysis"
+    },
+    {
+      "path": "demo-agent/sujie_demo_agent/protected_model.py",
+      "class": "ProtectedModel",
+      "method": "for_purpose",
+      "purpose": "caller-selected-supported-purpose",
+      "scope": "trusted MAIN/CLASSIFY/ISOLATED_ANALYSIS/SUBAGENT/RECOVERY wrappers; not proof that historical classifier callers use this wrapper"
+    }
+  ],
+  "scripted_backend_scope": "MESSAGES_TOOLS_ONLY",
+  "excluded_historical_bare_entrypoints": [
+    {
+      "path": "demo-agent/sujie_demo_agent/semantic_detector.py",
+      "classes": ["NoToolSemanticClassifier", "TaskAwareSemanticClassifier"],
+      "reason": "historical callers can pass bare provider without ProtectedModel; provider credentials are checked but source policy, role trace and shared budget association are not implied"
+    },
+    {
+      "path": "demo-agent/sujie_demo_agent/semantic_detector_v2.py",
+      "classes": ["TaskAwareSemanticClassifierV2"],
+      "reason": "same historical bare-classifier limitation; frozen M9 source is preserved"
+    },
+    {
+      "path": "eval/run_bailian.py",
+      "reason": "historical direct run_tool_agent/provider entrypoint is not upgraded to operator gateway role evidence"
+    },
+    {
+      "path": "eval/injecagent_local.py",
+      "reason": "historical direct model.complete loop is not upgraded to ProtectedModel role/source/budget evidence"
+    }
+  ],
+  "no_cloud_validation": true
+}
