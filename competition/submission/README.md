@@ -19,13 +19,15 @@
 
 | # | 文件（`（队长姓名）+溯界+资料名称`） | 内容 | 状态 |
 |---|---|---|---|
-| 1 | 作品报告.pdf | 按官方模板七部分（含封面/目录/页脚页码） | 草稿 v4，可生成 |
-| 2 | 原创性声明.pdf | 签名扫描 | 待办 |
-| 3 | 部署说明.pdf | 安装、启动、一键复现、已知限制 | 草稿 v1 |
-| 4 | 测试样例与流程说明.pdf | eval 协议/样例/Oracle/流程 | 草稿 v1 |
-| 5 | 证据包.zip | 脱敏 runs + 重算脚本 | **待证据** |
-| 6 | 可执行程序.zip | 源码 + 一键脚本（或镜像） | 待办 |
-| 7 | 演示视频.mp4 | 答辩演示录屏 | 待办 |
+| 1 | 作品报告.pdf | 按官方模板七部分（含封面/目录/页脚页码） | **已生成**，19 页 / 0.35MB |
+| 2 | 原创性声明.pdf（+ .docx） | 官方文本 | **已生成**，待组员签名 |
+| 3 | 部署说明.pdf | 安装、启动、一键复现、已知限制 | **已生成** |
+| 4 | 测试样例与流程说明.pdf | eval 协议/样例/Oracle/流程 | **已生成** |
+| 5 | 证据包.zip | 脱敏 runs + SHA-256 清单 + 复现说明 | **已生成**（本机复现，35 文件 / 0.9MB） |
+| 6 | 可执行程序.zip | 源码 + 一键脚本 | **已生成**（363 文件 / 1.1MB） |
+| 7 | 演示视频.mp4 | 答辩演示录屏 | 待录制（见 `演示脚本-溯界.md`） |
+
+> 产物均输出到 `dist/`（已 gitignore）；重新生成见下方命令。文件名中的「队长姓名」由团队在正式提交时替换。
 
 ## 本目录文件
 
@@ -33,7 +35,10 @@
 - `部署说明-溯界.md`：部署与复现说明（含已知限制与未验收项）。
 - `测试样例与流程说明-溯界.md`：测试样例、Oracle、基线与复现流程。
 - `tools/build_report_docx.py`：Markdown→DOCX 转换脚本，套用官方格式（A4、宋体小四、1.5 倍行距）。构建产物输出到 `dist/`（已忽略）。
-- `tools/build_report_pdf.py`：Markdown→PDF 转换脚本，生成**封面页 + 目录 + “第 X 页 共 Y 页”页脚**，并**嵌入系统宋体**（Songti SC），无需阅读器自带字体。
+- `tools/build_report_pdf.py`：Markdown→PDF 转换脚本，生成**封面页 + 目录 + “第 X 页 共 Y 页”页脚**，并**嵌入系统宋体**（Songti SC），无需阅读器自带字体；`--plain` 模式用于声明与说明类文档。
+- `tools/build_evidence_packet.py`：打包脱敏证据（逐文件 SHA-256 + 清单 + 个人路径/凭据扫描，自动排除预算账本与缓存）。
+- `tools/build_source_package.py`：打包提交源码（排除虚拟环境、缓存、模型缓存、本地运行状态、凭据与原始 runs，并做凭据模式扫描）。
+- `作品原创性声明-溯界.md`：官方声明文本（待签名）。
 
 构建报告 Word：
 
@@ -51,6 +56,45 @@ uv run --no-project --with reportlab python3 tools/build_report_pdf.py \
 ```
 
 > 说明：两个脚本均不复制官方模板中的“填写说明”页；正式提交前请按官方要求将文件命名为“队长姓名+作品名称+资料名称”，并确认全文不含身份信息。
+
+## 一键生成全部提交件
+
+在仓库根目录执行：
+
+```sh
+cd competition/submission
+
+# 1) 作品报告（封面+目录+页脚页码）
+uv run --no-project --with reportlab python3 tools/build_report_pdf.py \
+  作品报告-溯界.md "dist/溯界-作品报告.pdf"
+uv run --no-project --with python-docx python3 tools/build_report_docx.py \
+  作品报告-溯界.md "dist/溯界-作品报告.docx"
+
+# 2) 原创性声明（待签名）与两份说明文档
+uv run --no-project --with python-docx python3 tools/build_report_docx.py \
+  作品原创性声明-溯界.md "dist/溯界-作品原创性声明.docx"
+for f in 作品原创性声明-溯界 部署说明-溯界 测试样例与流程说明-溯界; do
+  uv run --no-project --with reportlab python3 tools/build_report_pdf.py --plain \
+    "$f.md" "dist/$f.pdf"
+done
+
+# 3) 先重跑确定性评测产生真实证据，再打包
+cd ../../sujie
+.venv/bin/python eval/run_business_validation.py \
+  --protocol-file eval/protocols/four_business_workflows_v2.json \
+  --out-dir eval/reports/runs/competition_repro_$(date +%Y%m%d)
+.venv/bin/python eval/verify_runtime_validation.py eval/reports/runs/competition_repro_$(date +%Y%m%d)
+.venv/bin/python dev.py eval-detection > /tmp/detection_v1.json
+cd ../competition/submission
+python3 tools/build_evidence_packet.py --out "dist/证据包-溯界-确定性复现.zip" \
+  --run ../../sujie/eval/reports/runs/competition_repro_$(date +%Y%m%d) \
+  --log "/tmp/detection_v1.json=detection_v1.json"
+
+# 4) 源码包
+cd ../..
+python3 competition/submission/tools/build_source_package.py --root . \
+  --out "competition/submission/dist/源码包-溯界.zip"
+```
 
 ## 术语纪律（全篇遵守）
 

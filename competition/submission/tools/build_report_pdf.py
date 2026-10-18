@@ -162,7 +162,7 @@ class ReportDoc(BaseDocTemplate):
             self.notify("TOCEntry", (level, flowable.getPlainText(), self.page))
 
 
-def build(md_path: Path, pdf_path: Path) -> None:
+def build(md_path: Path, pdf_path: Path, plain_mode: bool = False) -> None:
     register_fonts()
     st = styles()
     lines = strip_comments(md_path.read_text("utf-8").splitlines())
@@ -261,34 +261,37 @@ def build(md_path: Path, pdf_path: Path) -> None:
         i += 1
 
     # ---- cover ----
-    cover = [Spacer(1, 3.5 * cm), Paragraph("中国研究生网络安全创新大赛", st["cover_org"])]
-    cover.append(Spacer(1, 1.2 * cm))
-    cover.append(Paragraph("作品报告", st["cover_title"]))
-    cover.append(Spacer(1, 3.0 * cm))
-    fields = {k: v for k, v in cover_fields}
-    rows = [
-        [Paragraph(f"{k}：", st["cover_field"]), Paragraph(fields.get(k, ""), st["cover_field"])]
-        for k in ("作品名称", "提交日期")
-    ]
-    tbl = Table(rows, colWidths=[3.2 * cm, CONTENT_W - 3.2 * cm], hAlign="CENTER")
-    tbl.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
-                             ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                             ("TOPPADDING", (0, 0), (-1, -1), 6),
-                             ("BOTTOMPADDING", (0, 0), (-1, -1), 6)]))
-    cover.append(tbl)
-    cover.append(PageBreak())
-
-    # ---- toc + body ----
-    story = cover + [Paragraph("目　录", st["toc_head"]), Spacer(1, 6)]
+    cover: list = []
+    if not plain_mode:
+        cover = [Spacer(1, 3.5 * cm), Paragraph("中国研究生网络安全创新大赛", st["cover_org"])]
+        cover.append(Spacer(1, 1.2 * cm))
+        cover.append(Paragraph("作品报告", st["cover_title"]))
+        cover.append(Spacer(1, 3.0 * cm))
+        fields = {k: v for k, v in cover_fields}
+        rows = [
+            [Paragraph(f"{k}：", st["cover_field"]), Paragraph(fields.get(k, ""), st["cover_field"])]
+            for k in ("作品名称", "提交日期")
+        ]
+        tbl = Table(rows, colWidths=[3.2 * cm, CONTENT_W - 3.2 * cm], hAlign="CENTER")
+        tbl.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
+                                 ("LEFTPADDING", (0, 0), (-1, -1), 0),
+                                 ("TOPPADDING", (0, 0), (-1, -1), 6),
+                                 ("BOTTOMPADDING", (0, 0), (-1, -1), 6)]))
+        cover.append(tbl)
+        cover.append(PageBreak())
 
     doc = ReportDoc(
         str(pdf_path), pagesize=A4, leftMargin=MARGIN_X, rightMargin=MARGIN_X,
         topMargin=MARGIN_Y, bottomMargin=MARGIN_Y,
-        title="作品报告：溯界（Sujie）", author="",
+        title="溯界（Sujie）", author="",
     )
-    story.append(doc.toc)
-    story.append(PageBreak())
-    story += story_body
+    if plain_mode:
+        story = story_body
+    else:
+        story = cover + [Paragraph("目　录", st["toc_head"]), Spacer(1, 6)]
+        story.append(doc.toc)
+        story.append(PageBreak())
+        story += story_body
 
     pdf_path.parent.mkdir(parents=True, exist_ok=True)
     doc.multiBuild(story, canvasmaker=NumberedCanvas)
@@ -296,6 +299,8 @@ def build(md_path: Path, pdf_path: Path) -> None:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    argv = [a for a in sys.argv[1:] if a != "--plain"]
+    plain_mode = "--plain" in sys.argv
+    if len(argv) != 2:
         sys.exit(__doc__)
-    build(Path(sys.argv[1]), Path(sys.argv[2]))
+    build(Path(argv[0]), Path(argv[1]), plain_mode=plain_mode)
