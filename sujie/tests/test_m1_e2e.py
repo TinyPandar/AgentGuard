@@ -940,3 +940,45 @@ async def test_E2E_BOUNDARY_003_sensitive_inventory_is_not_filename_based(
         assert result["decision"] == "BLOCK"
         assert result["code"] == "EFFECT_NOT_GRANTED"
         assert HONEYTOKEN not in str(gateway.trace.dag())
+
+
+@pytest.mark.asyncio
+async def test_E2E_BOUNDARY_004_missing_evidence_ends_workflow_without_report(
+    tmp_path, fixture_document
+):
+    """A failed evidence read must stop the workflow, not fall through to act().
+
+    Regression for the F6 finding: read_evidence returned ``completed=False`` but the
+    unconditional edge still entered act(), which reads the absent ``alert`` key and
+    raises KeyError, and could otherwise write a bogus report.
+    """
+    evidence, workspace = tmp_path / "evidence", tmp_path / "workspace"
+    evidence.mkdir()
+    (workspace / "case-001").mkdir(parents=True)
+    with Receiver() as receiver:
+        params = {
+            "evidence": StdioServerParameters(
+                command=sys.executable,
+                args=[str(EVIDENCE_SERVER)],
+                env={"SUJIE_EVIDENCE_ROOT": str(evidence)},
+            ),
+            "operations": StdioServerParameters(
+                command=sys.executable,
+                args=[str(OPERATIONS_SERVER)],
+                env={
+                    "SUJIE_WORKSPACE_ROOT": str(workspace),
+                    "SUJIE_RECEIVER_URL": receiver.url,
+                },
+            ),
+        }
+        contract, grant = make_contracts(fixture_document)
+        async with StdioMCPProxy(params) as proxy:
+            gateway = M1Gateway(proxy, contract, grant)
+            result = await build_agent(gateway, DeterministicDecisionModel()).ainvoke(
+                {"alert_id": "missing"}
+            )
+    assert result["completed"] is False
+    assert len(result["decisions"]) == 1
+    assert result["decisions"][0]["ok"] is False
+    assert "report" not in result
+    assert not (workspace / "case-001/output/report.txt").exists()
