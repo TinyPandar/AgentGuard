@@ -35,7 +35,9 @@
 - `部署说明-溯界.md`：部署与复现说明（含已知限制与未验收项）。
 - `测试样例与流程说明-溯界.md`：测试样例、Oracle、基线与复现流程。
 - `tools/build_report_docx.py`：Markdown→DOCX 转换脚本，套用官方格式（A4、宋体小四、1.5 倍行距）。构建产物输出到 `dist/`（已忽略）。
-- `tools/build_report_pdf.py`：Markdown→PDF 转换脚本，生成**封面页 + 目录 + “第 X 页 共 Y 页”页脚**，并**嵌入系统宋体**（Songti SC），无需阅读器自带字体；`--plain` 模式用于声明与说明类文档。
+- `tools/build_report_pdf.py`：Markdown→PDF 转换脚本，生成**封面页 + 目录 + “第 X 页 共 Y 页”页脚**，并**嵌入系统中文字体**，无需阅读器自带字体；`--plain` 模式用于声明与说明类文档。
+  - 字体自动探测：macOS `Songti.ttc` → Windows `simsun.ttc` / `msyh.ttc` → Linux `NotoSerifCJK` / `uming` / `wqy`；找不到时给出清晰报错。
+  - 可用环境变量覆盖：`SUJIE_REPORT_FONT` / `SUJIE_REPORT_FONT_INDEX` / `SUJIE_REPORT_BOLD_FONT` / `SUJIE_REPORT_BOLD_INDEX`（`.ttc` 需指定子字体序号）。
 - `tools/build_evidence_packet.py`：打包脱敏证据（逐文件 SHA-256 + 清单 + 个人路径/凭据扫描，自动排除预算账本与缓存）。
 - `tools/build_source_package.py`：打包提交源码（排除虚拟环境、缓存、模型缓存、本地运行状态、凭据与原始 runs，并做凭据模式扫描）。
 - `作品原创性声明-溯界.md`：官方声明文本（待签名）。

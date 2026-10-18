@@ -12,6 +12,7 @@ Usage:
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from pathlib import Path
@@ -37,9 +38,21 @@ from reportlab.platypus import (
 )
 from reportlab.platypus.tableofcontents import TableOfContents
 
-SONGTI = "/System/Library/Fonts/Supplemental/Songti.ttc"
 FONT = "SongtiSC"
 FONT_BOLD = "SongtiSC-Bold"
+
+# Portable 宋体 candidates: (path, regular subfont index, bold subfont index).
+# Override with SUJIE_REPORT_FONT / SUJIE_REPORT_FONT_INDEX / _BOLD_ variants.
+FONT_CANDIDATES = [
+    ("/System/Library/Fonts/Supplemental/Songti.ttc", 6, 1),  # macOS Songti SC
+    ("/Library/Fonts/Songti.ttc", 6, 1),  # macOS (user-installed)
+    ("C:/Windows/Fonts/simsun.ttc", 0, 0),  # Windows 宋体 SimSun
+    ("C:/Windows/Fonts/msyh.ttc", 0, 0),  # Windows 微软雅黑
+    ("/usr/share/fonts/opentype/noto/NotoSerifCJK-Regular.ttc", 0, 0),  # Linux Noto CJK
+    ("/usr/share/fonts/truetype/arphic/uming.ttc", 0, 0),  # Linux AR PL UMing
+    ("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 0, 0),  # Linux WenQuanYi
+    ("/usr/share/fonts/truetype/wqy/wqy-microhei.ttc", 0, 0),
+]
 
 BODY_PT = 12  # 小四
 LEADING = 18  # 1.5 x
@@ -53,8 +66,25 @@ COVER_RE = re.compile(r"^(作品名称|提交日期)\s*[:：]\s*(.*)$")
 
 
 def register_fonts() -> None:
-    pdfmetrics.registerFont(TTFont(FONT, SONGTI, subfontIndex=6))  # Songti SC Regular
-    pdfmetrics.registerFont(TTFont(FONT_BOLD, SONGTI, subfontIndex=1))  # Songti SC Bold
+    override = os.environ.get("SUJIE_REPORT_FONT")
+    if override:
+        regular = (override, int(os.environ.get("SUJIE_REPORT_FONT_INDEX", "0")))
+        bold = (
+            os.environ.get("SUJIE_REPORT_BOLD_FONT", override),
+            int(os.environ.get("SUJIE_REPORT_BOLD_INDEX", str(regular[1]))),
+        )
+    else:
+        found = next((c for c in FONT_CANDIDATES if Path(c[0]).is_file()), None)
+        if found is None:
+            tried = "\n  ".join(c[0] for c in FONT_CANDIDATES)
+            raise SystemExit(
+                "No CJK font found. Set SUJIE_REPORT_FONT (and optionally "
+                "SUJIE_REPORT_FONT_INDEX / SUJIE_REPORT_BOLD_FONT / SUJIE_REPORT_BOLD_INDEX).\n"
+                f"Tried:\n  {tried}"
+            )
+        regular, bold = (found[0], found[1]), (found[0], found[2])
+    pdfmetrics.registerFont(TTFont(FONT, regular[0], subfontIndex=regular[1]))
+    pdfmetrics.registerFont(TTFont(FONT_BOLD, bold[0], subfontIndex=bold[1]))
     pdfmetrics.registerFontFamily(FONT, normal=FONT, bold=FONT_BOLD, italic=FONT, boldItalic=FONT_BOLD)
 
 
