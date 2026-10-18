@@ -29,3 +29,4 @@ target/
 
 # Local teammate handoff archive; import reviewed source into the existing layout.
 /网络安全创新大赛/
+.DS_Store
