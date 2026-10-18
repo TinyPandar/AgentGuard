@@ -274,7 +274,12 @@ def test_input_loader_rejects_symlinks_and_nonregular_entries(tmp_path, target):
     other = tmp_path / "other.json"
     other.write_bytes(path.read_bytes() if path.exists() else b"{}")
     path.unlink(missing_ok=True)
-    path.symlink_to(other)
+    try:
+        path.symlink_to(other)
+    except OSError as error:
+        if getattr(error, "winerror", None) == 1314:
+            pytest.skip("Windows account lacks symlink creation privilege")
+        raise
     with pytest.raises(ValueError, match="INPUT_FILE_INVALID|INSTANCE_SET_INVALID"):
         load_sealed_instances(folder)
 

@@ -1,0 +1,14 @@
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[node distance=9mm,box/.style={draw,rounded corners=2pt,align=center,text width=0.88\textwidth,inner sep=7pt,font=\normalsize},arr/.style={-{Stealth[length=2mm]},thick}]
+\node[box] (ui) {操作者控制台：任务、可信审批、来源图、实际影响与导出};
+\node[box,below=of ui] (host) {可信Host：模型调用、角色/会话、合同/Grant、共享预算};
+\node[box,below=of host] (gate) {执行网关：来源用途、真实参数、效果映射、策略与提交复核};
+\node[box,below=of gate] (tools) {真实MCP与受控执行器：文件、HTTP、注册程序、Git、Memory};
+\node[box,below=of tools] (oracle) {独立观察：实际报告、Receiver、Git对象/ref、SQLite版本与收据};
+\draw[arr] (ui)--(host);
+\draw[arr] (host)--(gate);
+\draw[arr] (gate)--(tools);
+\draw[arr] (tools)--(oracle);
+\end{tikzpicture}
+\caption{当前Host与工具执行链。外部正文和模型提议在执行前接受核验，审批来自可信入口。}\label{fig:architecture}
+\end{figure}
