@@ -819,7 +819,7 @@ async def run_tool_agent(
                                     "source_id"
                                 ],
                             }
-                            for item in sorted(gateway._exposed_artifacts)
+                            for item in gateway.reference_artifact_ids()
                             if gateway.trace.artifacts[item].to_dict()["origin"]["type"]
                             == "MCP_TOOL_RESULT"
                         ],

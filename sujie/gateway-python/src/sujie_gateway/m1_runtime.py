@@ -1255,6 +1255,26 @@ class M1Gateway:
             )
         )
 
+    def reference_artifact_ids(self) -> list[str]:
+        """Avoid advertising two representations of the same selected document.
+
+        Both remain exposed for policy and request provenance. If a top-level
+        content artifact exists, quote/delegation menus retain that document ID;
+        a nested-only result instead advertises its complete structured source.
+        This does not remove a source from enforcement or enlarge a child grant.
+        """
+        references = []
+        for identifier in sorted(self._exposed_artifacts):
+            body = self.trace.artifacts[identifier].to_dict()
+            duplicate = body["origin"]["source_id"].endswith(":structured-result") and any(
+                self.trace.artifacts[parent].to_dict()["origin"]["event_id"]
+                == body["origin"]["event_id"]
+                for parent in body["parents"]
+            )
+            if not duplicate:
+                references.append(identifier)
+        return references
+
     def record_model_output(
         self,
         content: str,

@@ -161,6 +161,14 @@ async def test_primary_content_identity_and_finding_are_preserved_without_double
     assert gate.trace.artifact_contents[primary] == ATTACK
     assert gate.trace.artifacts[structured_artifact(gate)].to_dict()["parents"] == [primary]
     assert sum(e["event_type"] == "DETECTION_FINDING" for e in gate.trace.events) == 1
+    assert gate.reference_artifact_ids() == [primary]
+    assert structured_artifact(gate) in gate._exposed_artifacts
+
+
+async def test_nested_only_result_remains_selectable_for_delegation_and_quotation():
+    gate = gateway({"nested": {"text": ATTACK}})
+    await gate.call("evidence.read_alert", {"alert_id": "alert"})
+    assert gate.reference_artifact_ids() == [structured_artifact(gate)]
 
 
 async def test_nested_memory_instruction_keeps_memory_origin_and_deferred_finding():
