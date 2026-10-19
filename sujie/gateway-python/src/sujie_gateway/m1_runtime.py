@@ -30,7 +30,7 @@ from .contracts import (
     local_scope,
     snapshot_hash,
 )
-from .detection import DETECTOR_VERSION, detect_indirect
+from .detection import DETECTOR_VERSION, detect_indirect, normalized_view
 from .dsl import evaluate, load_rules
 from .execution_policy import ExecutionPolicy
 from .git_policy import GitPolicy
@@ -43,9 +43,10 @@ from .invariants import (
 )
 from .memory_detection import deferred_memory_finding
 from .memory_policy import MemoryPolicy
-from .model_context import contains_protected
+from .model_context import contains_protected, safe_path
 from .network_policy import NetworkPolicy, payload_values
 from .sanitization import extract_public_ipv4_iocs, render_public_ipv4_iocs
+from .tool_result import ToolResultError, ToolResultSnapshot, snapshot_tool_result
 
 CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 LOCAL_TOOL_CATALOG = {
@@ -407,6 +408,7 @@ class PendingApproval:
     approval: ApprovalRecord | None = None
     terminal_result: dict[str, Any] | None = None
     review_metadata: dict | None = None
+    result_artifacts: tuple[str, ...] = ()
 
 
 class M1Policy:
@@ -1628,6 +1630,8 @@ class M1Gateway:
             }
         try:
             result = await self.proxy.invoke(tool, args)
+            result_snapshot = snapshot_tool_result(result)
+            result = result_snapshot.payload()
         except RuntimeError as error:
             self.trace.emit(
                 "EXECUTION_RESULT",
@@ -1637,7 +1641,13 @@ class M1Gateway:
                 decision_id=decision_id,
                 payload={"tool": tool, "ok": False, "code": str(error)},
             )
-            return {"ok": False, "decision": "ALLOW", "code": "TOOL_EXECUTION_FAILED"}
+            return {
+                "ok": False,
+                "decision": "ALLOW",
+                "code": str(error)
+                if isinstance(error, ToolResultError)
+                else "TOOL_EXECUTION_FAILED",
+            }
         executed = self.trace.emit(
             "EXECUTION_RESULT",
             actor_id=actor,
@@ -1647,7 +1657,9 @@ class M1Gateway:
             payload={"tool": tool, "ok": True},
         )
         self._track_file_write(tool, args, action, executed)
-        self._record_tool_result(tool, result, action, executed, expose=True)
+        self._record_tool_result(
+            tool, result, action, executed, expose=True, snapshot=result_snapshot
+        )
         return {"ok": True, "decision": "ALLOW", "data": result}
 
     @staticmethod
@@ -1794,7 +1806,9 @@ class M1Gateway:
         executed_event: str,
         *,
         expose: bool,
-    ) -> None:
+        snapshot: ToolResultSnapshot | None = None,
+    ) -> tuple[str, ...]:
+        snapshot = snapshot or snapshot_tool_result(data)
         effect = action.to_dict()["effect"]
         actor = self.grant.to_dict()["subject_id"]
         if tool in {"memory.read", "memory.write"} and self.memory_policy is not None:
@@ -1809,6 +1823,7 @@ class M1Gateway:
                     "content_sha256": data.get("content_sha256"),
                 },
             )
+        content_artifact = None
         content = data.get("content")
         if isinstance(content, str):
             source_id = (
@@ -1835,6 +1850,7 @@ class M1Gateway:
                 if tool == "network.fetch"
                 else "MCP_TOOL_RESULT",
             )
+            content_artifact = artifact_id
             read = self.trace.emit(
                 "RESOURCE_READ",
                 actor_id=actor,
@@ -1886,6 +1902,9 @@ class M1Gateway:
                     payload={"tool": tool},
                 )
                 self._exposed_artifacts.add(artifact_id)
+        structured = self._record_structured_result(
+            tool, snapshot, action, executed_event, content_artifact, expose=expose
+        )
         if effect["side_effect"]:
             self.trace.emit(
                 "RESOURCE_AFFECTED",
@@ -1895,6 +1914,144 @@ class M1Gateway:
                 artifact_ids=action.to_dict()["input_artifacts"],
                 payload={"kind": effect["kind"], "resources": effect["resources"]},
             )
+        return (content_artifact, structured) if content_artifact else (structured,)
+
+    def _record_structured_result(
+        self,
+        tool: str,
+        snapshot: ToolResultSnapshot,
+        action: SemanticAction,
+        executed_event: str,
+        content_artifact: str | None,
+        *,
+        expose: bool,
+    ) -> str:
+        """One complete source per result; findings refer to encoded field spans.
+
+        Keep the established content artifact for domain-specific oracles and
+        exact public-IOC declassification. Other keys/values cannot inherit that
+        exception: the complete result remains untrusted, non-transferable data.
+        """
+        effect = action.to_dict()["effect"]
+        actor = self.grant.to_dict()["subject_id"]
+        artifact = self.trace.create_artifact(
+            snapshot.wire_json,
+            source_event_id=executed_event,
+            source_id=f"{tool}:structured-result",
+            confidentiality="SECRET" if effect["kind"] == "credential.read" else "INTERNAL",
+            parents=[content_artifact]
+            if content_artifact
+            else action.to_dict()["input_artifacts"]
+            if tool == "execution.run"
+            else [],
+            origin_type="MEMORY"
+            if tool == "memory.read"
+            else "WEB_PAGE"
+            if tool == "network.fetch"
+            else "MCP_TOOL_RESULT",
+        )
+        registered = self.trace.emit(
+            "CONTENT_REGISTERED",
+            actor_id=actor,
+            parents=[executed_event],
+            action_id=action.to_dict()["action_id"],
+            artifact_ids=[artifact],
+            payload={
+                "tool": tool,
+                "kind": "STRUCTURED_TOOL_RESULT",
+                "result_binding": {
+                    "snapshot_hash": sha(snapshot.wire_json),
+                    "utf8_bytes": len(snapshot.wire_json.encode("utf-8")),
+                    "fields": [
+                        {
+                            "path": safe_path(item.path),
+                            "kind": item.kind,
+                            "wire_start": item.wire_start,
+                            "wire_end": item.wire_end,
+                            "content_hash": sha(item.text),
+                        }
+                        for item in snapshot.fields
+                    ],
+                },
+            },
+        )
+        self.trace.store_normalized_view(artifact, normalized_view(snapshot.wire_json))
+        parent = self.trace.emit(
+            "CONTENT_NORMALIZED",
+            actor_id=actor,
+            parents=[registered],
+            action_id=action.to_dict()["action_id"],
+            artifact_ids=[artifact],
+            payload={"detector_version": DETECTOR_VERSION, "kind": "STRUCTURED_TOOL_RESULT"},
+        )
+        for item in snapshot.fields:
+            # The ordinary top-level content has already been scanned once.
+            if content_artifact and item.kind == "VALUE" and item.path == ("content",):
+                continue
+            view, finding = detect_indirect(
+                item.text,
+                artifact,
+                new_id(),
+                attack_source="MEMORY" if tool == "memory.read" else "INDIRECT",
+            )
+            if tool == "memory.read" and finding is None:
+                finding = deferred_memory_finding(item.text, view, artifact, new_id())
+            if finding is None:
+                continue
+            body = finding.to_dict()
+            body["spans"] = [
+                {"artifact_id": artifact, "start": item.wire_start, "end": item.wire_end}
+            ]
+            finding = DetectionFinding(body)
+            parent = self.trace.emit(
+                "DETECTION_FINDING",
+                actor_id=actor,
+                parents=[parent],
+                action_id=action.to_dict()["action_id"],
+                artifact_ids=[artifact],
+                payload={"finding": finding.to_dict(), "kind": "STRUCTURED_TOOL_RESULT"},
+            )
+        if expose:
+            self._last_exposure_event = self.trace.emit(
+                "MODEL_EXPOSED",
+                actor_id=actor,
+                parents=list(dict.fromkeys([parent, self._last_exposure_event]))
+                if self._last_exposure_event
+                else [parent],
+                action_id=action.to_dict()["action_id"],
+                artifact_ids=[artifact],
+                payload={"tool": tool, "kind": "STRUCTURED_TOOL_RESULT"},
+            )
+            self._exposed_artifacts.add(artifact)
+        return artifact
+
+    def expose_committed_result(self, decision_id: str) -> None:
+        """Host hook immediately before an approved result enters model context.
+
+        Merely committing through the operator API is not model exposure. Replays
+        can reuse the same source identities without another execution or event.
+        """
+        pending = self._pending.get(decision_id)
+        if pending is None or not (pending.terminal_result or {}).get("ok"):
+            raise ValueError("UNCOMMITTED_RESULT")
+        identifiers = set(pending.result_artifacts)
+        if not identifiers or identifiers <= self._exposed_artifacts:
+            return
+        parents = [
+            self.trace.artifacts[item].to_dict()["origin"]["event_id"] for item in identifiers
+        ]
+        if self._last_exposure_event:
+            parents.append(self._last_exposure_event)
+        self._last_exposure_event = self.trace.emit(
+            "MODEL_EXPOSED",
+            actor_id=self.grant.to_dict()["subject_id"],
+            parents=list(dict.fromkeys(parents)),
+            action_id=pending.action.to_dict()["action_id"],
+            decision_id=decision_id,
+            artifact_ids=sorted(identifiers),
+            payload={"tool": pending.tool, "kind": "APPROVED_TOOL_RESULT"},
+        )
+        self._exposed_artifacts.update(identifiers)
 
     async def _reserve_budget(self, dimension: str) -> bool:
         contract_budget = self.contract.to_dict()["budgets"][dimension]
@@ -2093,6 +2250,8 @@ class M1Gateway:
             )
             try:
                 data = await self.proxy.invoke(pending.tool, arguments)
+                result_snapshot = snapshot_tool_result(data)
+                data = result_snapshot.payload()
                 result = {
                     "ok": True,
                     "decision": "ASK",
@@ -2100,12 +2259,14 @@ class M1Gateway:
                     "data": data,
                     "replayed": False,
                 }
-            except RuntimeError:
+            except RuntimeError as error:
                 result = {
                     "ok": False,
                     "decision": "ASK",
                     "approved": True,
-                    "code": "TOOL_EXECUTION_FAILED",
+                    "code": str(error)
+                    if isinstance(error, ToolResultError)
+                    else "TOOL_EXECUTION_FAILED",
                     "replayed": False,
                 }
             approval_body = pending.approval.to_dict()
@@ -2122,7 +2283,12 @@ class M1Gateway:
             )
             if result["ok"]:
                 self._track_file_write(pending.tool, arguments, pending.action, executed)
-                self._record_tool_result(
-                    pending.tool, result["data"], pending.action, executed, expose=False
+                pending.result_artifacts = self._record_tool_result(
+                    pending.tool,
+                    result["data"],
+                    pending.action,
+                    executed,
+                    expose=False,
+                    snapshot=result_snapshot,
                 )
             return result

@@ -827,7 +827,10 @@ async def run_tool_agent(
                     )
                 )
             if result.get("decision") == "ASK" and not result.get("approved") and hooks:
+                approval_decision_id = result["decision_id"]
                 result = await hooks.resolve_approval(result)
+                if result.get("ok") and result.get("approved"):
+                    gateway.expose_committed_result(approval_decision_id)
                 if result.get("code") in {
                     "APPROVAL_REJECTED",
                     "APPROVAL_WAIT_TIMEOUT",
