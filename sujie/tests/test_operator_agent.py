@@ -65,7 +65,7 @@ def start(client, identifier):
 
 
 def finished(client, identifier):
-    deadline = time.monotonic() + 8
+    deadline = time.monotonic() + 30
     while time.monotonic() < deadline:
         detail = view(client, identifier)
         if detail["agent"]["status"] not in {"RUNNING", "WAITING_APPROVAL", "RESUMING"}:

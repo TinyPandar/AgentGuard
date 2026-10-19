@@ -334,3 +334,45 @@ def test_simple_chinese_attack_path_is_derived_from_the_graph(scenario, tmp_path
     assert to_simple_dot_zh(graph) == dot
     written = {p.name for p in export_simple_attack_path_zh(graph, tmp_path)}
     assert {"attack_path_simple_zh.dot", "attack_path_simple_zh.mmd"} <= written
+
+
+@pytest.mark.parametrize("rendering", ["disabled", "unavailable", "available"])
+def test_bundle_uses_optional_renderer_for_all_graphs(scenario, tmp_path, rendering):
+    from sujie_gateway.provenance_export import write_bundle
+
+    graph, _, _ = scenario
+    calls = []
+
+    def renderer(dot_source: str, fmt: str) -> bytes | None:
+        calls.append((dot_source, fmt))
+        if rendering == "unavailable":
+            return None
+        return b"<svg>rendered</svg>" if fmt == "svg" else b"rendered png"
+
+    kwargs = {} if rendering == "disabled" else {"renderer": renderer}
+    written = {p.name for p in write_bundle(graph, tmp_path, title="test", **kwargs)}
+    assert {
+        "attack_path.dot",
+        "full_graph.dot",
+        "attack_path_simple_zh.dot",
+        "timeline.svg",
+    } <= written
+    rendered_files = {
+        "attack_path.svg",
+        "full_graph.svg",
+        "attack_path_simple_zh.svg",
+        "attack_path_simple_zh.png",
+    }
+    if rendering == "available":
+        assert rendered_files <= written
+        assert calls[:2] == [
+            (to_dot(graph, path_only=True), "svg"),
+            (to_dot(graph), "svg"),
+        ]
+        assert [fmt for _, fmt in calls] == ["svg", "svg", "svg", "png"]
+        assert "graph [dpi=144];" in calls[-1][0]
+        assert (tmp_path / "attack_path_simple_zh.png").read_bytes() == b"rendered png"
+        assert "<svg>rendered</svg>" in (tmp_path / "report.html").read_text(encoding="utf-8")
+    else:
+        assert not rendered_files & written
+        assert len(calls) == (0 if rendering == "disabled" else 2)
