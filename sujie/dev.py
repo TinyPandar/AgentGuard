@@ -21,6 +21,7 @@ def main() -> int:
             "check",
             "demo",
             "eval-detection",
+            "eval-bypass",
             "bench-policy",
             "bench-gateway",
             "console",
@@ -45,6 +46,10 @@ def main() -> int:
     if args.command == "eval-detection":
         return subprocess.run(
             [sys.executable, "eval/run_detection.py"], cwd=ROOT, check=False
+        ).returncode
+    if args.command == "eval-bypass":
+        return subprocess.run(
+            [sys.executable, "eval/run_bypass_matrix.py"], cwd=ROOT, check=False
         ).returncode
     if args.command == "bench-policy":
         return subprocess.run(
