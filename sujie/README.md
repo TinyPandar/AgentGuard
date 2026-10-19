@@ -1,5 +1,7 @@
 # 溯界比赛实现
 
+> 2026-10-19：新增基于 `fb6e6e4` 的[主线五能力审计与补强方案](../competition/docs/MAIN_CAPABILITY_AUDIT_2026-10-19.md)，含97项专项、返回字段/敏感逻辑路径探针和最新跨平台CI边界；后续接力优先看该记录，旧阶段成绩保留原版。
+
 > 2026-10-18 后续进度：[聊天控制台](docs/CONSOLE_CHAT_CHECKPOINT.md)。历史实验成绩不变。
 
 > **2026-10-18 main 同步说明：**本目录整合本地 M22—M25 工作，并保留远端独立修复；旧阶段结果仍按原源码与证据版本解释。本次合并版本的检查状态见 [main 同步记录](../docs/GITHUB_MAIN_SYNC_2026-10-18.md)，不能用历史测试数字替代本次验收。[旧提交材料和 Release](../competition/submission/README.md)尚未更新为 M25 成果。

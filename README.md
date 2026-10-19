@@ -1,5 +1,7 @@
 # 溯界（Sujie / AgentGuard）
 
+> **2026-10-19 最新主线审计：**以 `fb6e6e4`（含PR #18）核对源码与五项赛题要求，见[逐项完成度、反例与补强工作包](competition/docs/MAIN_CAPABILITY_AUDIT_2026-10-19.md)。本轮97项定向回归通过、1项资产缺失跳过；该基线Ubuntu全量通过，Windows仍有1项终态等待失败。报告通过不表示五项能力或最终交付已全部验收。
+
 > 2026-10-18：新增[聊天控制台](sujie/docs/CONSOLE_CHAT_CHECKPOINT.md)，含实现、数据处理变化及验证边界；下文旧阶段记录保留。
 
 > **2026-10-18 交付进度：**M22—M25 代码已整合，M25 LaTeX 作品报告已通过 [PR #15](https://github.com/jiapengLi11/AgentGuard/pull/15) 合入 `main`。报告为17页、358882字节，已通过XeLaTeX构建和全页版式审阅；见[交付状态与剩余事项](competition/submission/LATEX_DELIVERY_REVIEW.md)。原 Release 仍为M21快照。各阶段实验保留原版本身份，本次代码整合验证见 [main 同步记录](docs/GITHUB_MAIN_SYNC_2026-10-18.md)。
