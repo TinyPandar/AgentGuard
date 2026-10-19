@@ -1,16 +1,15 @@
 """Exporters for the provenance graph: Mermaid, Graphviz DOT/SVG, timeline SVG, HTML.
 
 All exporters are pure functions of the (already redacted) graph and produce
-byte-identical output for identical graphs. Graphviz is optional: when the
-``dot`` binary is missing, the bundle still contains Mermaid sources, the
-pure-Python timeline SVG and a self-contained HTML report.
+byte-identical output for identical graphs. Graphviz is optional: when no
+renderer is supplied or the ``dot`` binary is missing, the bundle still contains
+Mermaid sources, the pure-Python timeline SVG and a self-contained HTML report.
 """
 
 from __future__ import annotations
 
 import html
-import shutil
-import subprocess
+from collections.abc import Callable
 from pathlib import Path
 
 from .provenance_graph import ProvenanceGraph, stable_json
@@ -301,20 +300,6 @@ def to_dot(graph: ProvenanceGraph, *, path_only: bool = False) -> str:
         out.append(f"  {_dot_str(edge.src)} -> {_dot_str(edge.dst)} [{', '.join(attrs)}];")
     out.append("}")
     return "\n".join(out) + "\n"
-
-
-def render_dot(dot_source: str, fmt: str = "svg") -> bytes | None:
-    binary = shutil.which("dot")
-    if binary is None:
-        return None
-    result = subprocess.run(
-        [binary, f"-T{fmt}"],
-        input=dot_source.encode("utf-8"),
-        capture_output=True,
-        timeout=60,
-        check=True,
-    )
-    return result.stdout
 
 
 # ---------------------------------------------------------------------------
@@ -617,7 +602,14 @@ code{{background:#f1f5f9;padding:1px 4px;border-radius:4px}}
 """
 
 
-def write_bundle(graph: ProvenanceGraph, out_dir: Path, *, title: str) -> list[Path]:
+def write_bundle(
+    graph: ProvenanceGraph,
+    out_dir: Path,
+    *,
+    title: str,
+    renderer: Callable[[str, str], bytes | None] | None = None,
+) -> list[Path]:
+    """Write graph sources and reports, optionally rendering via the supplied callable."""
     out_dir.mkdir(parents=True, exist_ok=True)
     files: dict[str, str | bytes] = {
         "graph.json": stable_json(graph),
@@ -630,15 +622,17 @@ def write_bundle(graph: ProvenanceGraph, out_dir: Path, *, title: str) -> list[P
         "README.md": to_markdown(graph, title),
     }
     dag_svg = None
-    rendered = render_dot(files["attack_path.dot"], "svg")
+    rendered = renderer(files["attack_path.dot"], "svg") if renderer is not None else None
     if rendered is not None:
         dag_svg = rendered.decode("utf-8")
         files["attack_path.svg"] = dag_svg
-        full = render_dot(files["full_graph.dot"], "svg")
+        full = renderer(files["full_graph.dot"], "svg")
         if full is not None:
             files["full_graph.svg"] = full.decode("utf-8")
     files["report.html"] = to_html(graph, title, dag_svg)
-    written = list(export_simple_attack_path_zh(graph, out_dir)) if graph.focus else []
+    written = (
+        list(export_simple_attack_path_zh(graph, out_dir, renderer=renderer)) if graph.focus else []
+    )
     for name, data in files.items():
         path = out_dir / name
         if isinstance(data, bytes):
@@ -981,18 +975,23 @@ def to_simple_mermaid_zh(graph: ProvenanceGraph) -> str:
     return "\n".join(lines) + "\n"
 
 
-def export_simple_attack_path_zh(graph: ProvenanceGraph, out_dir: Path) -> list[Path]:
-    """Write attack_path_simple_zh.{dot,mmd,svg,png}; svg/png only when Graphviz exists."""
+def export_simple_attack_path_zh(
+    graph: ProvenanceGraph,
+    out_dir: Path,
+    *,
+    renderer: Callable[[str, str], bytes | None] | None = None,
+) -> list[Path]:
+    """Write attack_path_simple_zh sources, plus svg/png when a renderer is supplied."""
     out_dir.mkdir(parents=True, exist_ok=True)
     dot = to_simple_dot_zh(graph)
     files: dict[str, str | bytes] = {
         "attack_path_simple_zh.dot": dot,
         "attack_path_simple_zh.mmd": to_simple_mermaid_zh(graph),
     }
-    svg = render_dot(dot, "svg")
+    svg = renderer(dot, "svg") if renderer is not None else None
     if svg is not None:
         files["attack_path_simple_zh.svg"] = svg
-        png = render_dot(
+        png = renderer(
             dot.replace(
                 "digraph attack_path_zh {", "digraph attack_path_zh {\n  graph [dpi=144];", 1
             ),

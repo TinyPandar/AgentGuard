@@ -31,6 +31,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from mcp import StdioServerParameters
+from provenance_render import render_dot
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "gateway-python/src")]
@@ -221,7 +222,12 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     with tempfile.TemporaryDirectory(prefix="sujie-prov-") as tmp:
         graph, _, results = asyncio.run(run_scenario(Path(tmp)))
-    written = write_bundle(graph, args.out, title="Issue #42 indirect injection -> SSH key egress")
+    written = write_bundle(
+        graph,
+        args.out,
+        title="Issue #42 indirect injection -> SSH key egress",
+        renderer=render_dot,
+    )
     print(
         json.dumps(
             {k: {x: v.get(x) for x in ("ok", "decision", "code")} for k, v in results.items()},
