@@ -1,14 +1,16 @@
 """A bounded Host query over actual MCP reads; its output remains DATA_ONLY."""
 
 import json
+from copy import deepcopy
 
 from sujie_demo_agent.business_workflows import WORKFLOWS, timeline_window_query
 from sujie_gateway.m1_runtime import canonical_json, sha
 
 
 class TimelineQuery:
-    def __init__(self):
+    def __init__(self, trusted_target=None):
         self.artifact_id = None
+        self.trusted_target = deepcopy(trusted_target)
 
     def after_reads(self, gateway):
         if self.artifact_id is not None:
@@ -46,6 +48,9 @@ class TimelineQuery:
         if sum(len(text.encode("utf-8")) for text in contents.values()) > 65536:
             raise ValueError("TIMELINE_INPUT_LIMIT")
         primary = json.loads(contents.pop("alert"))
+        if self.trusted_target is not None:
+            # Input content never changes a Host-selected target or window.
+            primary = self.trusted_target
         result = timeline_window_query(primary, contents)
         content = canonical_json(result)
         parents = list(inputs.values())

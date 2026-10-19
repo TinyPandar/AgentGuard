@@ -2,10 +2,16 @@
 
 import asyncio
 import hashlib
+import json
 import time
 
+from sujie_demo_agent.bailian_agent import (
+    ModelProtocolError,
+    ProviderResponseEvidence,
+    supports_prepared_requests,
+)
 from sujie_gateway.m1_runtime import sha
-from sujie_gateway.model_context import canonical, digest
+from sujie_gateway.model_context import canonical, contains_protected, digest
 
 
 def file_hash(path):
@@ -44,6 +50,8 @@ def logical_fixture(session):
         },
     }
     instance = {}
+    if getattr(session, "core_instance", None) is not None:
+        data["core_instance_sha256"] = sha(session.core_instance)
     if session.gateway.network_policy:
         data["web_article_sha256"] = hashlib.sha256(
             session.web_fixture.article.encode()
@@ -80,15 +88,21 @@ def logical_fixture(session):
 
 def model_recipe(model):
     credentials = getattr(model, "_credentials", None)
-    return {
+    recipe = {
         "backend_class": type(model).__name__,
         "model": getattr(model, "model", "scripted-test-model"),
         "max_tokens": getattr(model, "max_tokens", 512),
         "timeout": getattr(model, "timeout", None),
-        "temperature": 0 if credentials is not None else None,
+        "temperature": getattr(model, "temperature", 0) if credentials is not None else None,
+        "tool_choice_hash": sha(getattr(model, "tool_choice", "auto"))
+        if credentials is not None
+        else None,
         "endpoint_hash": sha(credentials.base_url) if credentials is not None else None,
         "scope": "observed provider attributes and archived backend recipe; content hash is not a complete HTTP-wire attestation",
     }
+    if credentials is not None and contains_protected(recipe, (credentials.api_key,)):
+        raise ModelProtocolError("MODEL_EGRESS_CREDENTIAL")
+    return recipe
 
 
 class RecordedModel:
@@ -110,16 +124,53 @@ class RecordedModel:
     def usage(self):
         return getattr(self.backend, "usage", [])
 
-    async def complete(self, messages, tools):
+    @property
+    def effective_request_binding(self):
+        return "HTTP_JSON_BODY" if supports_prepared_requests(self.backend) else None
+
+    def _check_recipe(self):
         if model_recipe(self.backend) != self.recipe:
             raise ValueError("PAIRED_MODEL_CONFIGURATION_DRIFT")
-        self.node["requests"].append(
-            {
-                "content_hash": digest(canonical({"messages": messages, "tools": tools})),
-                "system_hash": sha(messages[0]),
-                "tools_hash": sha(tools),
-            }
-        )
+
+    def _record(self, messages, tools, *, prepared=None):
+        record = {
+            "content_hash": digest(canonical({"messages": messages, "tools": tools})),
+            "system_hash": sha(messages[0]),
+            "tools_hash": sha(tools),
+            "binding_scope": "HTTP_JSON_BODY" if prepared else "MESSAGES_TOOLS_ONLY",
+            "effective_request_hash": prepared.request_hash if prepared else None,
+            "call_id": prepared.call_id if prepared else None,
+            "budget_ticket": prepared.budget_ticket if prepared else None,
+        }
+        self.node["requests"].append(record)
+        return record
+
+    def prepare_request(self, messages, tools):
+        self._check_recipe()
+        if not supports_prepared_requests(self.backend):
+            raise ModelProtocolError("MODEL_BINDING_INVALID")
+        return self.backend.prepare_request(messages, tools)
+
+    async def complete_prepared(self, prepared):
+        # The recipe was checked during preparation. Changes after admission
+        # cannot change the frozen body; a later preparation still rejects drift.
+        payload = json.loads(prepared.wire_json)
+        record = self._record(payload["messages"], payload.get("tools", []), prepared=prepared)
+        try:
+            result = await self.backend.complete_prepared(prepared)
+        except ModelProtocolError as error:
+            if isinstance(error.evidence, ProviderResponseEvidence):
+                record["provider_receipt"] = error.evidence.metadata()
+            raise
+        record["provider_receipt"] = result.evidence.metadata()
+        record["response_hash"] = digest(result.message_json)
+        return result
+
+    async def complete(self, messages, tools):
+        if supports_prepared_requests(self.backend):
+            return (await self.complete_prepared(self.prepare_request(messages, tools))).message()
+        self._check_recipe()
+        self._record(messages, tools)
         return await self.backend.complete(messages, tools)
 
 

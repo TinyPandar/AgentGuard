@@ -1,0 +1,16 @@
+# Official Docker Library Python, pinned to the verified arm64 digest for this run.
+ARG PYTHON_BASE=python:3.12.14-slim@sha256:f77ac9e44ae96ef2c90b8053ea08c31f8be030f824196b0ae4db6d462c84e51f
+FROM ${PYTHON_BASE}
+LABEL org.sujie.purpose="m23-linux-smoke" org.sujie.ownership="m23-20261017-smoke"
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 TOKENIZERS_PARALLELISM=false
+RUN python -c "import sys; assert sys.version_info[:3] == (3, 12, 14)" \
+    && apt-get update \
+    && apt-get install --yes --no-install-recommends git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+COPY requirements.lock /opt/sujie-requirements.lock
+RUN python -m pip install --disable-pip-version-check --no-cache-dir \
+      --index-url https://pypi.org/simple -r /opt/sujie-requirements.lock \
+    && python -m pip check \
+    && groupadd --gid 10001 sujie \
+    && useradd --uid 10001 --gid 10001 --no-create-home --shell /usr/sbin/nologin sujie
+USER 10001:10001

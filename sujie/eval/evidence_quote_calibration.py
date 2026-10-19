@@ -142,7 +142,9 @@ async def run_quote_task(analysis_factory=QuotationModel):
                 for model in models
                 for row in getattr(model, "usage", [])
             ),
-            "passed": detail["agent"]["task_completed"]
+            "passed": detail["agent"]["status"] == "FINISHED"
+            and detail["agent"].get("error_code", "UNKNOWN") is None
+            and detail["agent"]["task_completed"]
             and COMMAND in report
             and witness["original_unchanged"]
             and detail["oracle"]["receiver_requests"] == 0

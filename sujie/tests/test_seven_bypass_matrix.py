@@ -5,7 +5,7 @@ import runpy
 from pathlib import Path
 
 import pytest
-from sujie_gateway.detection import (
+from sujie_gateway.detection_v2 import (
     MAX_SCAN_CHARS,
     ScanLimitExceeded,
     detect_indirect,
