@@ -30,7 +30,7 @@ from .contracts import (
     local_scope,
     snapshot_hash,
 )
-from .detection import DETECTOR_VERSION, detect_indirect
+from .detection import DETECTOR_VERSION, ScanLimitExceeded, detect_indirect
 from .dsl import evaluate, load_rules
 from .execution_policy import ExecutionPolicy
 from .git_policy import GitPolicy
@@ -1647,7 +1647,10 @@ class M1Gateway:
             payload={"tool": tool, "ok": True},
         )
         self._track_file_write(tool, args, action, executed)
-        self._record_tool_result(tool, result, action, executed, expose=True)
+        scan_error = self._record_tool_result(tool, result, action, executed, expose=True)
+        if scan_error is not None:
+            # The tool already executed; only its unscanned result is withheld.
+            return {"ok": False, "decision": "ALLOW", "code": scan_error}
         return {"ok": True, "decision": "ALLOW", "data": result}
 
     @staticmethod
@@ -1794,7 +1797,7 @@ class M1Gateway:
         executed_event: str,
         *,
         expose: bool,
-    ) -> None:
+    ) -> str | None:
         effect = action.to_dict()["effect"]
         actor = self.grant.to_dict()["subject_id"]
         if tool in {"memory.read", "memory.write"} and self.memory_policy is not None:
@@ -1843,12 +1846,39 @@ class M1Gateway:
                 artifact_ids=[artifact_id],
                 payload={"tool": tool, "content_hash": sha(content)},
             )
-            view, finding = detect_indirect(
-                content,
-                artifact_id,
-                new_id(),
-                attack_source="MEMORY" if tool == "memory.read" else "INDIRECT",
-            )
+            try:
+                view, finding = detect_indirect(
+                    content,
+                    artifact_id,
+                    new_id(),
+                    attack_source="MEMORY" if tool == "memory.read" else "INDIRECT",
+                )
+            except ScanLimitExceeded:
+                code = "CONTENT_SCAN_LIMIT_EXCEEDED"
+                self.trace.emit(
+                    "CONTENT_REGISTERED",
+                    actor_id=actor,
+                    parents=[read],
+                    action_id=action.to_dict()["action_id"],
+                    artifact_ids=[artifact_id],
+                    payload={
+                        "tool": tool,
+                        "scan_status": "REJECTED",
+                        "code": code,
+                        "detector_version": DETECTOR_VERSION,
+                    },
+                )
+                # Result rejection cannot erase the audit of an effect that ran.
+                if effect["side_effect"]:
+                    self.trace.emit(
+                        "RESOURCE_AFFECTED",
+                        actor_id=actor,
+                        parents=[executed_event],
+                        action_id=action.to_dict()["action_id"],
+                        artifact_ids=action.to_dict()["input_artifacts"],
+                        payload={"kind": effect["kind"], "resources": effect["resources"]},
+                    )
+                return code
             if tool == "memory.read" and finding is None:
                 finding = deferred_memory_finding(content, view, artifact_id, new_id())
             self.trace.store_normalized_view(artifact_id, view)
@@ -2122,7 +2152,16 @@ class M1Gateway:
             )
             if result["ok"]:
                 self._track_file_write(pending.tool, arguments, pending.action, executed)
-                self._record_tool_result(
+                scan_error = self._record_tool_result(
                     pending.tool, result["data"], pending.action, executed, expose=False
                 )
+                if scan_error is not None:
+                    result = {
+                        "ok": False,
+                        "decision": "ASK",
+                        "approved": True,
+                        "code": scan_error,
+                        "replayed": False,
+                    }
+                    pending.terminal_result = result
             return result
