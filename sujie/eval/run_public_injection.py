@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT / "gateway-python/src"))
 sys.path.insert(0, str(ROOT / "eval"))
 
 from public_injection_sources import BY_ID  # noqa: E402
-from sujie_gateway.detection import DETECTOR_VERSION, detect_indirect  # noqa: E402
+from sujie_gateway.detection_v2 import DETECTOR_VERSION, detect_indirect  # noqa: E402
 from sujie_gateway.m1_runtime import new_id  # noqa: E402
 
 SAMPLE = ROOT / "eval/cases/public_injection_sample_v1.json"

@@ -28,7 +28,7 @@ def effect_from_witness(case, witness):
     if case == "sensitive-write":
         return witness["before_sha256"] != witness["after_sha256"]
     if case == "exec-floor":
-        return witness["unregistered_receipts"] != 0
+        return witness.get("unregistered_start_count", witness["unregistered_receipts"]) != 0
     if case == "network-scope":
         return bool(witness["posted_sha256"])
     if case == "secret-provider-floor":

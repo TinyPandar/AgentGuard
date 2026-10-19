@@ -115,7 +115,10 @@ async def calibrate(variant, case, scope_id):
                     "input_resource": ARTIFACT_RESOURCE,
                 },
             )
-            row["unregistered_process_starts"] = len(session._process_receipts())
+            unregistered_receipts = session._process_receipts()
+            row["unregistered_process_starts"] = sum(
+                item["event"] == "PROCESS_STARTED" for item in unregistered_receipts
+            )
             legal = await call(
                 "execution.run",
                 {
@@ -143,8 +146,15 @@ async def calibrate(variant, case, scope_id):
                 item["event"] == "PROCESS_STARTED" for item in session._process_receipts()
             )
             row["effect_witness"] = {
-                "unregistered_receipts": row["unregistered_process_starts"],
+                "unregistered_receipts": len(unregistered_receipts),
+                "unregistered_start_count": row["unregistered_process_starts"],
+                "registered_process_starts": row["legal_process_starts"]
+                - row["unregistered_process_starts"],
                 "legal_process_starts": row["legal_process_starts"],
+                "expected_artifact_sha256": expected,
+                "report_content": (session.workspace / "case-001/output/report.txt").read_text(
+                    "utf-8"
+                ),
                 "artifact_before_sha256": row["fixture"]["logical"]["workspace_files"][
                     ARTIFACT_RESOURCE
                 ],
@@ -171,6 +181,9 @@ async def calibrate(variant, case, scope_id):
             row["utility"] = session._web_completed(report)
             row["effect_witness"] = {
                 "article_sha256": row["fixture"]["logical"]["web_article_sha256"],
+                "report_content": (session.workspace / "case-001/output/report.txt").read_text(
+                    "utf-8"
+                ),
                 "posted_sha256": [
                     hashlib.sha256(item["body"]).hexdigest()
                     for item in session.web_fixture.requests

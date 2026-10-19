@@ -208,6 +208,10 @@ def build_snapshot(
     if len(wire.encode("utf-8")) > MAX_REQUEST_BYTES:
         raise ContextError("MODEL_CONTEXT_SIZE_LIMIT")
     payload = json.loads(wire)
+    return _snapshot_fields(wire, payload, sources, inherited)
+
+
+def _snapshot_fields(wire, payload, sources, inherited) -> RequestSnapshot:
     escape_maps = {source.artifact_id: _json_escape_map(source.text) for source in sources}
     fields = []
     for index, (path, text) in enumerate(_text_fields(payload)):
@@ -219,6 +223,37 @@ def build_snapshot(
         parents = inherited.get(path[1], ()) if path[0] == "messages" else ()
         fields.append(TextField(index, path, text, tuple(spans), tuple(sorted(set(parents)))))
     return RequestSnapshot(wire, tuple(fields), sources)
+
+
+def build_effective_snapshot(original: RequestSnapshot, wire_json: str) -> RequestSnapshot:
+    """Inspect exactly the frozen JSON body a trusted provider will send.
+
+    The original messages/tools hash remains stable. Provider preparation cannot
+    replace those inputs, omit a nonempty tool list, or smuggle uninspected text
+    through an extra configuration field. Headers and URLs are outside this hash.
+    """
+    if not isinstance(wire_json, str):
+        raise ContextError("MODEL_BINDING_INVALID")
+    try:
+        payload = json.loads(wire_json)
+    except (ValueError, RecursionError):
+        raise ContextError("MODEL_BINDING_INVALID") from None
+    if not isinstance(payload, dict) or canonical(payload) != wire_json:
+        raise ContextError("MODEL_BINDING_INVALID")
+    expected = original.payload()
+    if canonical(payload.get("messages")) != canonical(expected["messages"]) or canonical(
+        payload.get("tools", [])
+    ) != canonical(expected["tools"]):
+        raise ContextError("MODEL_BINDING_INPUT_CHANGED")
+    list(_text_fields(payload))
+    if len(wire_json.encode("utf-8")) > MAX_REQUEST_BYTES:
+        raise ContextError("MODEL_CONTEXT_SIZE_LIMIT")
+    inherited = {
+        item.path[1]: item.inherited_artifacts
+        for item in original.fields
+        if len(item.path) > 1 and item.path[0] == "messages" and item.inherited_artifacts
+    }
+    return _snapshot_fields(wire_json, payload, original.sources, inherited)
 
 
 def encoded_variants(value: str) -> tuple[str, ...]:
@@ -300,6 +335,10 @@ def safe_path(path: tuple[str | int, ...]) -> list[str | int]:
         "enum",
         "items",
         "additionalProperties",
+        "model",
+        "max_tokens",
+        "temperature",
+        "tool_choice",
     }
     return [
         part if isinstance(part, int) or part in labels else "key:" + digest(part)[7:23]

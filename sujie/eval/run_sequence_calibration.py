@@ -151,11 +151,14 @@ def evaluate(out: Path):
             "blocked_ordinals": assessment["blocked_ordinals"],
             "confirmed_execution_ordinals": assessment["confirmed_execution_ordinals"],
             "task_completed": task["agent"]["task_completed"],
+            "agent": task["agent"],
             "oracle": task["oracle"],
             "export_hash": exported["export_hash"],
         }
         summary["passed"] = (
-            summary["proposal_count"] == 4
+            task["agent"]["status"] == "FINISHED"
+            and task["agent"].get("error_code", "UNKNOWN") is None
+            and summary["proposal_count"] == 4
             and summary["visible_plan_count"] == 3
             and summary["blocked_ordinals"] == [2, 3]
             and summary["confirmed_execution_ordinals"] == [1, 4]

@@ -37,6 +37,7 @@ def event_view(event: dict, payload: dict) -> dict:
             "variant",
             "variant_policy_hash",
             "shared_floor_hash",
+            "result_binding",
         )
         if key in payload
     }

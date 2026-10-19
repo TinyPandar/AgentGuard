@@ -5,7 +5,10 @@ import time
 
 import pytest
 from fastapi.testclient import TestClient
+from sealed_git import path_identity
+from sujie_control import runtime as control_runtime
 from sujie_control.api import create_app
+from sujie_gateway.git_policy import GitError
 from test_operator_agent import call, finished, start
 from test_operator_api import HEADERS, TOKEN, approve_call, view
 from verify_operator_export import verify
@@ -87,6 +90,44 @@ def wait_approval(client, identifier):
         assert detail["agent"]["status"] in {"RUNNING", "RESUMING"}, detail["agent"]
         time.sleep(0.02)
     raise AssertionError("ASK_NOT_REACHED")
+
+
+@pytest.fixture
+def host_temp_alias(tmp_path):
+    real = tmp_path / "owned-temp"
+    real.mkdir()
+    alias = tmp_path / "temp-alias"
+    try:
+        alias.symlink_to(real, target_is_directory=True)
+    except (OSError, NotImplementedError) as error:
+        pytest.skip(f"directory symlink unavailable: {error}")
+    return real, alias
+
+
+@pytest.mark.parametrize("profile", ["git-review", "git-publish"])
+def test_host_temp_alias_is_canonicalized_before_git_sealing(host_temp_alias, monkeypatch, profile):
+    real, alias = host_temp_alias
+    original = control_runtime.tempfile.TemporaryDirectory
+
+    def aliased_temp_directory(*args, **kwargs):
+        kwargs["dir"] = str(alias)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(control_runtime.tempfile, "TemporaryDirectory", aliased_temp_directory)
+    app = create_app(TOKEN, model_factory=lambda: GitModel(publish=profile == "git-publish"))
+    with TestClient(app) as client:
+        identifier = task(client, profile, scenario="clean")
+        session = app.state.manager.get(identifier)
+        assert session.workspace == session.workspace.resolve(strict=True)
+        assert session.workspace.is_relative_to(real.resolve(strict=True))
+        assert session.git_fixture.executor.state()["valid"]
+        assert view(client, identifier)["oracle"]["git_push_attempts"] == 0
+
+
+def test_untrusted_git_path_alias_remains_forbidden(host_temp_alias):
+    _, alias = host_temp_alias
+    with pytest.raises(GitError, match="GIT_ALIAS_FORBIDDEN"):
+        path_identity(alias)
 
 
 def test_review_injection_push_is_blocked_and_report_continues():

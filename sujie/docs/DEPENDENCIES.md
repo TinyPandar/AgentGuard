@@ -1,9 +1,11 @@
 # M0/M1 依赖与许可证
 
+> **2026-10-16 M22：** 当前Mac在仓库根目录新建`.venv/`，CPython3.12.14，按原锁安装71个依赖并通过兼容性检查；`sujie/.venv/`的Windows移交环境保留。实际前端目录已按原锁重建Mac依赖，原Windows目录保存在`console-vue/.tmp/node_modules-windows-pre-m22/`。本轮没有更新锁文件或宣称重新完成供应链审计。当前入口见[M22记录](M22_FIRST_BATCH_STATUS.md)。
+
 > **2026-10-15 交接更新：** 本页保留依赖表及M0/M1/M6安装观察；Python锁和前端锁是当前版本来源。本次交接实际解释器为Windows Python3.12.2，原3.12.14/容器3.12.13/Node22.14等属于旧环境，不作为当前补丁版本要求。当前需要Python3.12.x、Node20.19+或22.12+，Git业务另需Git；Java/MySQL非依赖。旧npm审计为当时查询，未重新做安全审计。
 > 完整现状、启动与证据限制见[交接手册](PROJECT_HANDOFF.md)。
 
-安装范围：仅 sujie/.venv，不修改 Anaconda 或全局 Python。
+历史安装范围为sujie/.venv；M22当前Mac使用仓库根目录.venv，不修改Anaconda或全局Python。
 版本以 requirements.lock 为准；直接依赖以 requirements.txt / requirements-dev.txt 声明。
 当前锁定全部 Python 包版本，但没有声称完成 wheel Hash 校验或供应链审计。
 本机 Windows/Python 3.12.14 与 Ubuntu VM 容器/Python 3.12.13 已验证；
@@ -54,7 +56,7 @@ JSON Schema 中 format 默认不必执行；本项目显式提供 FormatChecker 
 
 MCP/LangGraph 的间接依赖已记录于 requirements.lock，包括 Pydantic、HTTP 栈和加密库；
 它们扩大了依赖面，后续需要漏洞扫描和 wheel Hash 锁定。百炼 Provider 使用已有
-标准库 HTTP 适配；Java 仍未安装。前端依赖现在由 `console-vue/package-lock.json`
+HTTPX适配；Java不是当前运行依赖。前端依赖现在由 `console-vue/package-lock.json`
 固定，下面单列。
 纯 Python 领域模型以 Schema 为唯一字段定义，不另写易漂移的传输模型。
 
