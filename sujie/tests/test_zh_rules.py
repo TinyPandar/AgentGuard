@@ -5,7 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "gateway-python/src"))
 
-from sujie_gateway.detection import detect_indirect  # noqa: E402
+from sujie_gateway.detection_v2 import detect_indirect  # noqa: E402
 from sujie_gateway.m1_runtime import new_id  # noqa: E402
 from sujie_gateway.zh_rules import fold_zh  # noqa: E402
 
