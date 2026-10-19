@@ -327,6 +327,7 @@ class ProvenanceRecorder:
             "grant_id": grant["grant_id"],
             "effects": sorted(grant["effects"]),
             "resource_scopes": list(grant["resource_scopes"]),
+            "budgets": dict(sorted(grant.get("budgets", {}).items())),
         }
         original_call = gateway.call
         original_spawn = gateway.spawn_child
@@ -693,6 +694,7 @@ def build_provenance_graph(
                     "parent": None,
                     "effects": info.get("effects"),
                     "resource_scopes": info.get("resource_scopes"),
+                    "budgets": info.get("budgets"),
                 },
             )
         )

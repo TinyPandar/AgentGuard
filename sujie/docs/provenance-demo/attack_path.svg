@@ -283,9 +283,9 @@
 <!-- source:goal -->
 <g id="node16" class="node">
 <title>source:goal</title>
-<ellipse fill="#dbeafe" stroke="#1d4ed8" stroke-width="3" cx="884.5" cy="-905.18" rx="173.48" ry="21.43"/>
+<ellipse fill="#dbeafe" stroke="#1d4ed8" stroke-width="3" cx="884.5" cy="-905.18" rx="215.84" ry="21.43"/>
 <text text-anchor="middle" x="884.5" y="-908.18" font-family="Helvetica,sans-Serif" font-size="10.00">[USER] user request (TaskContract goal)</text>
-<text text-anchor="middle" x="884.5" y="-897.18" font-family="Helvetica,sans-Serif" font-size="10.00">Triage Issue #42 (CI release build fails); you …</text>
+<text text-anchor="middle" x="884.5" y="-897.18" font-family="Helvetica,sans-Serif" font-size="10.00">分诊 Issue #42（CI 发布构建失败），必要时可核对部署密钥指纹</text>
 </g>
 <!-- source:goal&#45;&gt;agent:0 -->
 <g id="edge4" class="edge">

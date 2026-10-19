@@ -292,3 +292,45 @@ def test_operator_console_endpoint_serves_graph_without_artifact_text():
         assert any(d["attrs"]["decision"] == "BLOCK" for d in decisions)
         assert body["graph"]["focus"]
         client.delete(f"/operator/v1/tasks/{identifier}", headers=headers)
+
+
+def test_simple_chinese_attack_path_is_derived_from_the_graph(scenario, tmp_path):
+    from sujie_gateway.provenance_export import (
+        export_simple_attack_path_zh,
+        simple_attack_path_zh,
+        to_simple_dot_zh,
+        to_simple_mermaid_zh,
+    )
+
+    graph, _, _ = scenario
+    data = simple_attack_path_zh(graph)
+    steps = data["steps"]
+    assert [s["no"] for s in steps] == ["①", "②", "③", "④", "⑤"]
+    assert [s["style"] for s in steps] == ["normal", "agent", "inject", "sensitive", "block"]
+    text = ["\n".join(s["lines"]) for s in steps]
+    assert "分诊 Issue #42" in text[0]
+    assert "triage-agent（第1层）" in text[1] and "repro-worker（第2层）" in text[1]
+    assert "30 → 14 → 8" in text[1] and "agent.delegate" in text[1]
+    spans = sorted(
+        (n for n in graph.nodes.values() if n.type == "span"), key=lambda n: n.attrs["char_start"]
+    )
+    for span in spans:
+        assert f"字符 {span.attrs['char_start']}–{span.attrs['char_end']}" in text[2]
+    assert "evidence MCP" in text[2] and "工具投毒" in text[2]
+    assert "~/.ssh/id_ed25519" in text[3] and "放行" in text[3] and "SECRET" in text[3]
+    assert "paste.attacker.test.invalid" in text[4] and "CRITICAL" in text[4]
+    assert "私钥数据" in text[4] and "不在白名单" in text[4] and "docs.test.invalid" in text[4]
+    assert len(data["retries"]) == 1 and "溯源禁止外传" in "\n".join(data["retries"][0]["lines"])
+    assert "未到达 network MCP" in data["result"]["lines"][0]
+    dot, mermaid = to_simple_dot_zh(graph), to_simple_mermaid_zh(graph)
+    assert "rankdir=TB" in dot and "Noto Sans CJK SC" in dot
+    assert (
+        mermaid.startswith("flowchart TB")
+        and "s0 --> s1 --> s2 --> s3 --> s4 --> result" in mermaid
+    )
+    for output in (dot, mermaid):
+        for marker in SECRET_MARKERS:
+            assert marker not in output
+    assert to_simple_dot_zh(graph) == dot
+    written = {p.name for p in export_simple_attack_path_zh(graph, tmp_path)}
+    assert {"attack_path_simple_zh.dot", "attack_path_simple_zh.mmd"} <= written

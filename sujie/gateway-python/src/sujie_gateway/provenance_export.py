@@ -504,6 +504,14 @@ def to_markdown(graph: ProvenanceGraph, title: str) -> str:
         )
     md += [
         "",
+        "## 简化版攻击路径（中文，答辩/报告用）",
+        "",
+        "![简化版攻击路径](attack_path_simple_zh.png)",
+        "",
+        "```mermaid",
+        to_simple_mermaid_zh(graph).rstrip() if graph.focus else "flowchart TB",
+        "```",
+        "",
         "## Attack-path DAG",
         "",
         "```mermaid",
@@ -630,6 +638,368 @@ def write_bundle(graph: ProvenanceGraph, out_dir: Path, *, title: str) -> list[P
         if full is not None:
             files["full_graph.svg"] = full.decode("utf-8")
     files["report.html"] = to_html(graph, title, dag_svg)
+    written = list(export_simple_attack_path_zh(graph, out_dir)) if graph.focus else []
+    for name, data in files.items():
+        path = out_dir / name
+        if isinstance(data, bytes):
+            path.write_bytes(data)
+        else:
+            path.write_text(data, "utf-8")
+        written.append(path)
+    return written
+
+
+# ---------------------------------------------------------------------------
+# Simplified Chinese attack path (defence slides / competition report)
+
+ZH_FONT = "Noto Sans CJK SC"
+ZH_STYLES = {
+    "normal": ("#eef2f7", "#475569", "#1e293b"),
+    "agent": ("#e0ecff", "#2563eb", "#1e3a8a"),
+    "inject": ("#fde2e2", "#dc2626", "#7f1d1d"),
+    "sensitive": ("#ffedd5", "#ea580c", "#7c2d12"),
+    "block": ("#7f1d1d", "#450a0a", "#ffffff"),
+    "result": ("#ecfdf5", "#059669", "#064e3b"),
+}
+ZH_REASONS = {
+    "untrusted_text_directs_agent_action": "指使 Agent 执行操作",
+    "untrusted_text_directs_sensitive_exfiltration": "要求读取并外发私钥等敏感数据",
+    "untrusted_text_requests_instruction_override": "要求忽略原有指令",
+    "untrusted_text_requests_sensitive_effect": "要求外发凭据",
+    "untrusted_text_claims_authority": "伪造授权",
+    "untrusted_text_requests_prompt_or_secret_disclosure": "索取系统提示或秘密",
+}
+ZH_FAMILY = {
+    "TOOL_POISONING": "工具投毒",
+    "CONTEXT_HIJACK": "上下文劫持",
+    "AUTHORIZATION_FORGERY": "伪造授权",
+    "DATA_EXFILTRATION": "数据外泄",
+    "ROLE_SPOOFING": "角色伪装",
+    "CHARACTER_ENCODING": "编码绕过",
+}
+ZH_BLOCK_REASON = {
+    "RESOURCE_OUT_OF_SCOPE": "目标不在授权白名单",
+    "PROVENANCE_FORBIDS_TRANSFER": "溯源禁止外传",
+    "EGRESS_SOURCE_UNREGISTERED": "外发内容来源未登记",
+    "EFFECT_NOT_GRANTED": "未授予该类操作",
+    "CONTRACT_FORBIDS_EFFECT": "任务契约禁止该操作",
+    "SENSITIVE_TARGET_FORBIDDEN": "敏感路径硬阻断",
+}
+
+
+def _host(url: str) -> str:
+    from urllib.parse import urlsplit
+
+    try:
+        return urlsplit(str(url)).hostname or str(url)
+    except ValueError:
+        return str(url)
+
+
+def _wrap(text: str, width: int = 26) -> list[str]:
+    """Wrap by display width (CJK = 2) without splitting ASCII words."""
+    import re
+
+    lines, current, size = [], "", 0
+    for piece in re.findall(r"[A-Za-z0-9_.:/#~-]+|.", text):
+        step = sum(1 if ord(c) < 128 else 2 for c in piece)
+        if size + step > width * 2 and current.strip():
+            lines.append(current.rstrip())
+            current, size = "", 0
+            if piece == " ":
+                continue
+        current += piece
+        size += step
+    if current.strip():
+        lines.append(current.rstrip())
+    return lines
+
+
+def simple_attack_path_zh(graph: ProvenanceGraph) -> dict:
+    """Five-step Chinese summary of the focused attack path, derived from the graph."""
+    if not graph.focus:
+        raise ValueError("NO_FOCUS_DECISION")
+    nodes, path = graph.nodes, set(graph.attack_path)
+
+    def out(src: str, kind: str) -> list[str]:
+        return [e.dst for e in graph.edges if e.src == src and e.type == kind]
+
+    def into(dst: str, kind: str) -> list[str]:
+        return [e.src for e in graph.edges if e.dst == dst and e.type == kind]
+
+    focus = nodes[graph.focus]
+    focus_call = nodes[into(focus.id, "DECIDED_BY")[0]]
+    steps = []
+    # 1 user task
+    goal = next(
+        (
+            n
+            for n in nodes.values()
+            if n.type == "source" and n.attrs["kind"] == "user" and n.id in path
+        ),
+        None,
+    )
+    goal_text = goal.attrs.get("preview") or goal.attrs["locator"] if goal else "（无）"
+    steps.append({"no": "①", "title": "用户任务", "style": "normal", "lines": _wrap(goal_text)})
+    # 2 agent chain
+    agents = sorted(
+        (n for n in nodes.values() if n.type == "agent" and n.id in path),
+        key=lambda n: n.attrs["depth"],
+    )
+    names = [
+        n.label
+        if n.attrs["depth"] == 0 and n.attrs["role"] == "main"
+        else f"{n.label}（第{n.attrs['depth']}层）"
+        for n in agents
+    ]
+    if agents and agents[0].attrs["role"] == "main":
+        names[0] = f"主 Agent（{agents[0].label}）"
+    lines = [names[0], *("→ " + name for name in names[1:])]
+    budgets = [n.attrs.get("budgets") or {} for n in agents]
+    if all(budgets):
+        for key, label in (("tool_calls", "工具调用预算"), ("subagents", "子 Agent 名额")):
+            if all(key in b for b in budgets):
+                lines.append(f"{label}：" + " → ".join(str(b[key]) for b in budgets))
+    effects = [set(n.attrs.get("effects") or []) for n in agents]
+    removed = sorted(effects[0] - effects[-1]) if len(effects) > 1 else []
+    if removed:
+        lines.append(f"权限逐级收窄：第{agents[-1].attrs['depth']}层去掉 " + "、".join(removed))
+    steps.append({"no": "②", "title": "Agent 委派链", "style": "agent", "lines": lines})
+    # 3 injection source
+    spans = sorted(
+        (n for n in nodes.values() if n.type == "span" and n.id in path),
+        key=lambda n: n.attrs["char_start"],
+    )
+    content = nodes[into(spans[0].id, "CONTAINS")[0]] if spans else None
+    if content is not None:
+        producer = into(content.id, "RETURNS")
+        server = nodes[producer[0]].attrs["mcp_server"] if producer else "?"
+        family = content.attrs["findings"][0]["attack_family"] if content.attrs["findings"] else ""
+        reasons = []
+        for span in spans:
+            for reason in span.attrs["reasons"]:
+                text = ZH_REASONS.get(reason, reason)
+                if text not in reasons:
+                    reasons.append(text)
+        lines = [
+            f"{server} MCP 返回：{content.attrs['source_id'].split(':', 1)[-1]}",
+            f"检测到注入：{ZH_FAMILY.get(family, family)}",
+        ]
+        lines.append(
+            "载荷位置："
+            + "、".join(f"字符 {s.attrs['char_start']}–{s.attrs['char_end']}" for s in spans)
+        )
+        lines += _wrap("含义：" + "；".join(reasons))
+        steps.append({"no": "③", "title": "外部注入来源", "style": "inject", "lines": lines})
+    # 4 sensitive read: SECRET content flowing into the focused call
+    secret_contents = [nodes[s] for s in into(focus_call.id, "FLOWS_INTO")]
+    for secret in secret_contents:
+        reader = nodes[into(secret.id, "RETURNS")[0]]
+        decision = nodes[reader.attrs["decision_node"]]
+        resource = reader.attrs["params"].get("resource", secret.attrs["source_id"])
+        resource_label = "~/" + resource.split("/home/", 1)[1] if "/home/" in resource else resource
+        steps.append(
+            {
+                "no": "④",
+                "title": "读取私钥（敏感数据）",
+                "style": "sensitive",
+                "lines": [
+                    f"{reader.attrs['mcp_server']} MCP · {reader.attrs['tool'].split('.', 1)[-1]}",
+                    f"目标：{resource_label}",
+                    f"决策：{'放行' if decision.attrs['decision'] == 'ALLOW' else decision.attrs['decision']}"
+                    f"（在授权范围内）",
+                    f"结果标记：{secret.attrs['confidentiality']}（敏感数据）",
+                ],
+            }
+        )
+        break
+    # 5 egress attempt (focus)
+    url = focus_call.attrs["params"].get("url", "")
+    host = _host(url) if url else ", ".join(out(focus.id, "PREVENTED_EFFECT")) or "?"
+    why = []
+    if secret_contents:
+        why.append("请求参数含私钥数据（来自步骤④）")
+    alignment = focus.attrs.get("alignment") or {}
+    if focus.attrs["reason"] == "RESOURCE_OUT_OF_SCOPE":
+        scopes = next(
+            (
+                f["summary"]
+                for f in alignment.get("facts", [])
+                if f["field"] == "grant.resource_scopes"
+            ),
+            "",
+        )
+        allowed = [_host(s) for s in scopes.split(", ") if s.startswith("http")]
+        why.append(
+            f"目标域名 {host} 不在白名单" + (f"（仅允许 {'、'.join(allowed)}）" if allowed else "")
+        )
+    else:
+        why.append(ZH_BLOCK_REASON.get(focus.attrs["reason"], focus.attrs["reason"]))
+    risk = focus.attrs["provenance_risk"]["level"]
+    steps.append(
+        {
+            "no": "⑤",
+            "title": "外发请求 → 阻断",
+            "style": "block",
+            "lines": [
+                f"{focus_call.attrs['tool']} → {host}",
+                f"决策：阻断（{ZH_BLOCK_REASON.get(focus.attrs['reason'], focus.attrs['reason'])}）"
+                f"  风险：{risk}",
+                *("原因：" + w if i == 0 else "　　　" + w for i, w in enumerate(why)),
+            ],
+        }
+    )
+    # side: later blocked retries by the same agent with the same tool
+    retries = []
+    for node in sorted(nodes.values(), key=lambda n: n.seq):
+        if (
+            node.type == "tool_call"
+            and node.seq > focus_call.seq
+            and node.attrs["agent"] == focus_call.attrs["agent"]
+            and node.attrs["tool"] == focus_call.attrs["tool"]
+        ):
+            decision = nodes.get(node.attrs.get("decision_node", ""))
+            if decision is not None and decision.attrs["decision"] == "BLOCK":
+                retry_host = _host(node.attrs["params"].get("url", ""))
+                retries.append(
+                    {
+                        "title": "第二次尝试：换合法域名重试",
+                        "style": "block",
+                        "lines": [
+                            f"{node.attrs['tool']} → {retry_host}",
+                            f"决策：阻断（{ZH_BLOCK_REASON.get(decision.attrs['reason'], decision.attrs['reason'])}）",
+                            "私钥数据不允许外传，换域名也无效",
+                        ],
+                    }
+                )
+    # result
+    routed = [
+        e
+        for e in graph.edges
+        if e.type == "ROUTED_TO"
+        and nodes[e.src].attrs["tool"] == focus_call.attrs["tool"]
+        and nodes[e.src].attrs["agent"] == focus_call.attrs["agent"]
+    ]
+    server = focus_call.attrs["mcp_server"]
+    reached = any(e.attrs.get("executed") for e in routed)
+    result = {
+        "title": "影响结果",
+        "style": "result" if not reached else "block",
+        "lines": [
+            f"外发{'已到达' if reached else '未到达'} {server} MCP",
+            f"{len(routed)} 次外发尝试，{sum(bool(e.attrs.get('executed')) for e in routed)} 次被执行",
+        ],
+    }
+    return {"steps": steps, "retries": retries, "result": result}
+
+
+def _zh_label_html(item: dict, header: str) -> str:
+    fill, stroke, color = ZH_STYLES[item["style"]]
+    rows = [
+        f'<TR><TD ALIGN="LEFT"><B><FONT POINT-SIZE="22">{html.escape(header)}</FONT></B></TD></TR>'
+    ]
+    for line in item["lines"]:
+        rows.append(
+            f'<TR><TD ALIGN="LEFT"><FONT POINT-SIZE="16">{html.escape(line)}</FONT></TD></TR>'
+        )
+    return (
+        '<<TABLE BORDER="0" CELLBORDER="0" CELLSPACING="2" CELLPADDING="2">'
+        + "".join(rows)
+        + "</TABLE>>"
+    )
+
+
+def to_simple_dot_zh(graph: ProvenanceGraph) -> str:
+    data = simple_attack_path_zh(graph)
+    out = [
+        "digraph attack_path_zh {",
+        f'  graph [rankdir=TB, nodesep=0.8, ranksep=0.55, fontname="{ZH_FONT}", fontsize=26,'
+        ' labelloc=t, label="攻击路径（简化版）：间接注入 → 委派 → 读私钥 → 外发被阻断",'
+        ' pad=0.4, bgcolor="white"];',
+        f'  node [shape=box, style="rounded,filled", fontname="{ZH_FONT}", margin="0.3,0.18",'
+        " penwidth=2.5];",
+        f'  edge [fontname="{ZH_FONT}", fontsize=15, penwidth=2.2, color="#64748b",'
+        " arrowsize=1.2];",
+    ]
+    ids = []
+    for index, step in enumerate(data["steps"]):
+        fill, stroke, color = ZH_STYLES[step["style"]]
+        node_id = f"s{index}"
+        ids.append(node_id)
+        out.append(
+            f"  {node_id} [label={_zh_label_html(step, step['no'] + ' ' + step['title'])},"
+            f' fillcolor="{fill}", color="{stroke}", fontcolor="{color}"];'
+        )
+    result = data["result"]
+    fill, stroke, color = ZH_STYLES[result["style"]]
+    out.append(
+        f'  result [label={_zh_label_html(result, result["title"])}, fillcolor="{fill}",'
+        f' color="{stroke}", fontcolor="{color}"];'
+    )
+    for a, b in zip(ids, ids[1:]):
+        out.append(f"  {a} -> {b} [weight=10];")
+    out.append(f"  {ids[-1]} -> result [weight=10];")
+    for index, retry in enumerate(data["retries"][:1]):
+        fill, stroke, color = ZH_STYLES[retry["style"]]
+        out.append(
+            f"  r{index} [label={_zh_label_html(retry, retry['title'])},"
+            f' fillcolor="{fill}", color="{stroke}", fontcolor="{color}", style="rounded,filled,dashed"];'
+        )
+        out.append(f"  {{ rank=same; {ids[-1]}; r{index}; }}")
+        out.append(
+            f'  {ids[-1]} -> r{index} [style=dashed, label="  被拒后重试  ",'
+            ' color="#7f1d1d", fontcolor="#7f1d1d", constraint=false];'
+        )
+    out.append("}")
+    return "\n".join(out) + "\n"
+
+
+def to_simple_mermaid_zh(graph: ProvenanceGraph) -> str:
+    data = simple_attack_path_zh(graph)
+    lines = ["flowchart TB"]
+    ids = []
+    for index, step in enumerate(data["steps"]):
+        label = "<br/>".join(_mm_text(x) for x in [f"{step['no']} {step['title']}", *step["lines"]])
+        lines.append(f'    s{index}["{label}"]')
+        ids.append((f"s{index}", step["style"]))
+    result = data["result"]
+    label = "<br/>".join(_mm_text(x) for x in [result["title"], *result["lines"]])
+    lines.append(f'    result["{label}"]')
+    chain = [i for i, _ in ids] + ["result"]
+    lines.append("    " + " --> ".join(chain))
+    for index, retry in enumerate(data["retries"][:1]):
+        label = "<br/>".join(_mm_text(x) for x in [retry["title"], *retry["lines"]])
+        lines.append(f'    r{index}["{label}"]')
+        lines.append(f"    {ids[-1][0]} -.->|被拒后重试| r{index}")
+        ids.append((f"r{index}", retry["style"]))
+    for style, (fill, stroke, color) in ZH_STYLES.items():
+        lines.append(
+            f"    classDef {style} fill:{fill},stroke:{stroke},color:{color},stroke-width:2px"
+        )
+    for node_id, style in [*ids, ("result", result["style"])]:
+        lines.append(f"    class {node_id} {style}")
+    return "\n".join(lines) + "\n"
+
+
+def export_simple_attack_path_zh(graph: ProvenanceGraph, out_dir: Path) -> list[Path]:
+    """Write attack_path_simple_zh.{dot,mmd,svg,png}; svg/png only when Graphviz exists."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    dot = to_simple_dot_zh(graph)
+    files: dict[str, str | bytes] = {
+        "attack_path_simple_zh.dot": dot,
+        "attack_path_simple_zh.mmd": to_simple_mermaid_zh(graph),
+    }
+    svg = render_dot(dot, "svg")
+    if svg is not None:
+        files["attack_path_simple_zh.svg"] = svg
+        png = render_dot(
+            dot.replace(
+                "digraph attack_path_zh {", "digraph attack_path_zh {\n  graph [dpi=144];", 1
+            ),
+            "png",
+        )
+        if png is not None:
+            files["attack_path_simple_zh.png"] = png
     written = []
     for name, data in files.items():
         path = out_dir / name

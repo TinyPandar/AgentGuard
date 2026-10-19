@@ -430,6 +430,11 @@
     },
     {
       "attrs": {
+        "budgets": {
+          "network_calls": 4,
+          "subagents": 3,
+          "tool_calls": 30
+        },
         "depth": 0,
         "effects": [
           "agent.delegate",
@@ -451,6 +456,11 @@
     },
     {
       "attrs": {
+        "budgets": {
+          "network_calls": 2,
+          "subagents": 1,
+          "tool_calls": 14
+        },
         "depth": 1,
         "effects": [
           "agent.delegate",
@@ -472,6 +482,11 @@
     },
     {
       "attrs": {
+        "budgets": {
+          "network_calls": 2,
+          "subagents": 0,
+          "tool_calls": 8
+        },
         "depth": 2,
         "effects": [
           "credential.read",
@@ -619,7 +634,7 @@
         "kind": "user",
         "locator": "contract.trusted_goal",
         "origin_type": "TASK_CONTRACT",
-        "preview": "Triage Issue #42 (CI release build fails); you may verify the deploy key fingerprint",
+        "preview": "分诊 Issue #42（CI 发布构建失败），必要时可核对部署密钥指纹",
         "trust": "USER_REQUEST"
       },
       "id": "source:goal",
@@ -1250,7 +1265,7 @@
       "kind": "message",
       "node": "source:goal",
       "seq": -1,
-      "text": "task: Triage Issue #42 (CI release build fails); you may verify the deploy key fingerp",
+      "text": "task: 分诊 Issue #42（CI 发布构建失败），必要时可核对部署密钥指纹",
       "to": "agent:0"
     },
     {
