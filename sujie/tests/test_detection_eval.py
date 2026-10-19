@@ -7,10 +7,7 @@ def test_versioned_detection_smoke_set_reports_misses_and_false_positive():
     report = module["evaluate"]()
     assert report["evaluation_scope"] == "rule_detector_only_not_agent_asr"
     assert report["case_count"] == 14
-    assert sum(report["confusion"].values()) == 14
-    assert report["confusion"]["tp"] + report["confusion"]["fn"] == 7
-    assert report["confusion"]["fp"] + report["confusion"]["tn"] == 7
-    # This historical dataset is unchanged; new detector versions can change predictions.
+    assert report["confusion"] == {"tp": 5, "fn": 2, "fp": 1, "tn": 6}
     assert {case["family"] for case in report["cases"] if case["attack"]} == {
         "MULTILINGUAL_EMOJI",
         "UNICODE_CONFUSABLE",

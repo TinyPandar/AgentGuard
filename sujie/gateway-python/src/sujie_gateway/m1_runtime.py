@@ -30,7 +30,7 @@ from .contracts import (
     local_scope,
     snapshot_hash,
 )
-from .detection import DETECTOR_VERSION, ScanLimitExceeded, detect_indirect, normalized_view
+from .detector import ScanLimitExceeded, get_detector
 from .dsl import evaluate, load_rules
 from .execution_policy import ExecutionPolicy
 from .git_policy import GitPolicy
@@ -71,6 +71,13 @@ def sha(value: Any) -> str:
 
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+# Runtime detector: extended (detection_v2) by default, SUJIE_DETECTOR=frozen for rules-v0.3.
+ACTIVE_DETECTOR = get_detector()
+DETECTOR_VERSION = ACTIVE_DETECTOR.DETECTOR_VERSION
+detect_indirect = ACTIVE_DETECTOR.detect_indirect
+normalized_view = ACTIVE_DETECTOR.normalized_view
 
 
 def utc_text(value: datetime) -> str:

@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "gateway-python/src"))
 
-from sujie_gateway.detection import (  # noqa: E402
+from sujie_gateway.detection_v2 import (  # noqa: E402
     DETECTOR_VERSION,
     detect_indirect,
     detect_indirect_segments,
