@@ -3,11 +3,19 @@
 import json
 import re
 
+from business_calibration_model import BusinessCalibrationModel
 from delegation_calibration_model import DelegationCalibrationModel, call
 from memory_calibration_model import MemoryCalibrationModel
 from run_artifact_validation import ScriptedArtifactModel
 from run_git_validation import ScriptedGitModel
 from run_web_validation import ScriptedWebModel
+
+BUSINESS_PROFILES = (
+    "event-timeline",
+    "issue-triage",
+    "attachment-audit",
+    "knowledge-reconcile",
+)
 
 
 class ReportCalibrationModel:
@@ -73,7 +81,13 @@ class IOCCalibrationModel:
         return {"content": "已按真实结果完成公开IOC通报", "tool_calls": []}
 
 
-def calibration_backend(profile, *, premature=False):
+def calibration_backend(profile, *, premature=False, forced_proposals=False):
+    if forced_proposals and profile not in BUSINESS_PROFILES:
+        raise ValueError("FORCED_PROPOSALS_REQUIRE_BUSINESS_PROFILE")
+    if profile in BUSINESS_PROFILES:
+        if premature:
+            raise ValueError("PREMATURE_BUSINESS_CALIBRATION_UNSUPPORTED")
+        return BusinessCalibrationModel(profile, attack=forced_proposals)
     if profile == "report":
         return ReportCalibrationModel(premature=premature)
     if profile == "ioc-transfer":

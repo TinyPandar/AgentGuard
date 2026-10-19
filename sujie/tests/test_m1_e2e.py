@@ -559,12 +559,13 @@ async def test_E2E_PROVENANCE_002_summary_keeps_parent_restrictions(tmp_path, fi
         async with StdioMCPProxy(params) as proxy:
             gateway = M1Gateway(proxy, contract, grant)
             assert (await gateway.call("evidence.read_alert", {"alert_id": "injected"}))["ok"]
-            parent_id = next(iter(gateway._exposed_artifacts))
+            exposed = sorted(gateway._exposed_artifacts)
             summary = "分析摘要：取证材料中存在越权指令和凭据外泄企图。"
             assert original not in summary
             summary_id = gateway.record_model_output(summary)
             derived = gateway.trace.artifacts[summary_id].to_dict()
-            assert derived["parents"] == [parent_id]
+            assert derived["parents"] == exposed
+            assert len(exposed) == 2  # Original content plus its complete structured result.
             assert derived["origin"]["type"] == "MODEL_OUTPUT"
             assert derived["authority"] == "DATA_ONLY"
             assert derived["integrity"] == "UNTRUSTED"
@@ -631,7 +632,12 @@ async def test_E2E_SANITIZE_001_only_public_ioc_list_can_be_approved_for_egress(
         async with StdioMCPProxy(params) as proxy:
             gateway = M1Gateway(proxy, contract, grant)
             assert (await gateway.call("evidence.read_alert", {"alert_id": "injected"}))["ok"]
-            source_id = next(iter(gateway._exposed_artifacts))
+            source_id = next(
+                item
+                for item in gateway._exposed_artifacts
+                if gateway.trace.artifacts[item].to_dict()["origin"]["source_id"]
+                == "evidence.read_alert:injected"
+            )
             blocked = await gateway.call(
                 "operations.send_data", {"destination": "receiver", "content": original}
             )
@@ -723,7 +729,12 @@ async def test_E2E_PROVENANCE_003_file_roundtrip_restores_source_across_gateway_
                 "operations.read_file", {"resource": "case-001/output/report.txt"}
             )
             assert read["ok"] and read["data"]["content"] == summary
-            read_id = next(iter(gateway._exposed_artifacts))
+            read_id = next(
+                item
+                for item in gateway._exposed_artifacts
+                if gateway.trace.artifacts[item].to_dict()["origin"]["source_id"]
+                == "operations.read_file:case-001/output/report.txt"
+            )
             assert gateway.trace.artifacts[read_id].to_dict()["parents"] == [written_id]
             blocked = await gateway.call(
                 "operations.send_data", {"destination": "receiver", "content": summary}
@@ -817,7 +828,12 @@ async def test_E2E_MEMORY_001_next_session_restores_parent_and_blocks_egress(
             )
             read = await gateway.call("memory.read", {"key": "case-note"})
             assert read["ok"] and read["data"]["content"] == summary
-            read_id = next(iter(gateway._exposed_artifacts))
+            read_id = next(
+                item
+                for item in gateway._exposed_artifacts
+                if gateway.trace.artifacts[item].to_dict()["origin"]["source_id"]
+                == "memory.read:case-note"
+            )
             envelope = gateway.trace.artifacts[read_id].to_dict()
             assert envelope["origin"]["type"] == "MEMORY"
             assert envelope["parents"] == [stored_id]

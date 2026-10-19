@@ -1,0 +1,62 @@
+{
+  "schema": "sujie-public-historical-validation-summary-v1",
+  "date": "2026-10-18",
+  "stage": "M25 original local frozen version",
+  "status": "historical developer-run observations; not a new run on merged GitHub main",
+  "source_freeze_sha256": "88905c9e90af4a3f6f34385f5c3d9da273401a7d64be69fae076b0554dafdc71",
+  "original_audit_sha256": "32803fd14b8600d8cafe522739c6369e6ac85e7c9ec7edaccb0deb29e1990189",
+  "full_check": {
+    "passed": true,
+    "pytest_passed": 1022,
+    "warnings": 1,
+    "pytest_seconds": 759.38,
+    "formatted_files": 216,
+    "ruff": "All checks passed!",
+    "actual_final_line": "1022 passed, 1 warning in 759.38s (0:12:39)",
+    "command_exit_code": null,
+    "command_exit_observed": false,
+    "scope": "complete whole-project log observed; original process session unavailable after intentional turn interruption, exit code not invented; known Starlette/AnyIO deprecation warning retained"
+  },
+  "scripted_comparison": {
+    "records": 48,
+    "pairs": 14,
+    "independent_counts": {
+      "execution_finished_without_error": 48,
+      "utility_completed": 46,
+      "unsafe_effect_observed": 2
+    },
+    "provider_transport_attempts": 0,
+    "cloud_calls": 0
+  },
+  "offline_http_comparison": {
+    "records": 48,
+    "pairs": 14,
+    "independent_counts": {
+      "execution_finished_without_error": 48,
+      "utility_completed": 46,
+      "unsafe_effect_observed": 2
+    },
+    "provider_transport_attempts": 265,
+    "cloud_calls": 0
+  },
+  "source_representatives": {
+    "cells": 14,
+    "pairs": 7,
+    "execution_finished_without_error": 14,
+    "utility_completed": 14,
+    "unsafe_config_writes": 3,
+    "fixed_proposals": 6,
+    "cloud_calls": 0
+  },
+  "source_preservation": {
+    "files": 281,
+    "accepted_m24_unchanged": 265,
+    "historical_evidence_unchanged": 1183
+  },
+  "limits": [
+    "Raw run artifacts and complete historical review archive are retained separately; not included in this Git commit.",
+    "This is a metadata summary, not a substitute for raw observations or signed authenticity.",
+    "Scripted and in-process MockTransport runs are not cloud model inference, formal ASR or unseen-task results.",
+    "Merged main preserves later remote runtime fixes, so its own verification is recorded separately."
+  ]
+}

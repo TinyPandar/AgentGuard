@@ -1,0 +1,19 @@
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[node distance=8mm and 5mm,box/.style={draw,rounded corners=2pt,align=center,text width=0.25\textwidth,inner sep=6pt,font=\normalsize},wide/.style={box,text width=0.86\textwidth},arr/.style={-{Stealth[length=2mm]},thick}]
+\node[wide] (proposal) {模型提议：物化参数，绑定任务、来源与工具版本};
+\node[wide,below=of proposal] (policy) {确定性授权、来源用途、DSL与风险证据};
+\node[box,below=of policy] (ask) {ASK\\可信审批后提交};
+\node[box,left=of ask] (block) {BLOCK\\记录原因与安全反馈};
+\node[box,right=of ask] (allow) {ALLOW\\进入执行前复核};
+\node[wide,below=of ask] (commit) {提交复核：输入、版本、权限、预算与资源状态仍一致};
+\node[wide,below=of commit] (result) {执行并观察实际效果；记录成功、失败或UNKNOWN};
+\draw[arr] (proposal)--(policy);
+\draw[arr] (policy)--(ask);
+\draw[arr] (policy.south -| block.north)--(block.north);
+\draw[arr] (policy.south -| allow.north)--(allow.north);
+\draw[arr] (ask)--(commit);
+\draw[arr] (allow.south)--(commit.north -| allow.south);
+\draw[arr] (commit)--(result);
+\end{tikzpicture}
+\caption{三态决策、动作绑定审批与执行前复核。BLOCK分支不进入执行。}\label{fig:decision}
+\end{figure}
