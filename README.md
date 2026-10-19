@@ -12,7 +12,7 @@
 | 1 多源注入识别 | 部分完成 | [`tool_result.py`](sujie/gateway-python/src/sujie_gateway/tool_result.py)、[`detection_v2.py`](sujie/gateway-python/src/sujie_gateway/detection_v2.py)、[`test_tool_result_sources.py`](sujie/tests/test_tool_result_sources.py)、[`test_operator_memory_cycle.py`](sujie/tests/test_operator_memory_cycle.py) | 无真实 PDF/DOCX/源码提取适配；无同会话追加多轮 API；记忆仅固定 key，无检索式召回 |
 | 2 意图—计划—工具对齐 | 部分完成 | [`alignment.py`](sujie/gateway-python/src/sujie_gateway/alignment.py)、[`sequence_alignment.py`](sujie/gateway-python/src/sujie_gateway/sequence_alignment.py)、[`test_alignment.py`](sujie/gateway-python/tests/test_alignment.py)、[`test_sequence_alignment.py`](sujie/tests/test_sequence_alignment.py) | 解释主要在 BLOCK 后生成，缺执行前独立偏离评估；跨轮组合越权仅覆盖“读凭据→外发” |
 | 3 工具策略 DSL 与三态 | 部分完成（五类规则均有实现） | [`dsl.py`](sujie/gateway-python/src/sujie_gateway/dsl.py)、[`policies/m1.yaml`](sujie/gateway-python/policies/m1.yaml)、[`sensitive_targets.py`](sujie/gateway-python/src/sujie_gateway/sensitive_targets.py)、下表五个测试 | 风险等级由决策反推（`ALLOW→LOW`，否则 `HIGH`），不是独立运行时风险；DSL 获得的上下文事实少 |
-| 4 跨 MCP 与子 Agent 溯源 | 部分完成 | `TraceLedger`（[`m1_runtime.py`](sujie/gateway-python/src/sujie_gateway/m1_runtime.py)）、[`tokenizer_mapper.py`](sujie/demo-agent/sujie_demo_agent/tokenizer_mapper.py)、控制台 [`App.vue`](sujie/console-vue/src/App.vue) 来源 SVG 与时间线 | DAG 只有 Artifact 节点，缺 Agent/MCP/决策节点；无分泳道时序图；调用参数主要存哈希 |
+| 4 跨 MCP 与子 Agent 溯源 | 部分完成（主体已补齐） | [`provenance_graph.py`](sujie/gateway-python/src/sujie_gateway/provenance_graph.py)、[`provenance_export.py`](sujie/gateway-python/src/sujie_gateway/provenance_export.py)、[`test_provenance_graph.py`](sujie/tests/test_provenance_graph.py)、[演示产物](sujie/docs/provenance-demo/README.md)、控制台“攻击链路溯源”页 | token 区间用确定性简单分词器、编码载荷仅到 Artifact 级；控制台未接 Recorder（参数为规范化效果+哈希）；演示 Agent 为脚本驱动 |
 | 5 对抗鲁棒性（七类绕过） | 部分完成（七类均有规则与测试） | [`detection_v2.py`](sujie/gateway-python/src/sujie_gateway/detection_v2.py)、[`zh_rules.py`](sujie/gateway-python/src/sujie_gateway/zh_rules.py)、[`test_seven_bypass_matrix.py`](sujie/tests/test_seven_bypass_matrix.py)、[`run_public_injection.py`](sujie/eval/run_public_injection.py) | 公开数据集 held-out 召回仅 30.6%；角色扮演/语义伪装依赖规则，尚无统一语义检测编排；真实多轮拆分未闭环 |
 
 ### 能力1 多源注入识别
@@ -49,15 +49,17 @@
 
 ### 能力4 跨 MCP 与子 Agent 溯源
 
+说明见 [`PROVENANCE_GRAPH.md`](sujie/docs/PROVENANCE_GRAPH.md)。演示：间接注入（Issue）→ 主 Agent → 子 Agent → 孙 Agent → 经 `operations` MCP 读 `~/.ssh` 合成密钥 → 经 `network` MCP 外发到未知域名，被 **BLOCK**（[DAG/时序图/报告](sujie/docs/provenance-demo/README.md)，`python eval/provenance_demo.py` 可复现，两次运行产物逐字节一致）。
+
 | 子项 | 状态 | 证据 / 缺口 |
 |---|---|---|
-| 触发源 | 已完成 | Artifact 来源类型 USER_MESSAGE / MCP_TOOL_RESULT / WEB_PAGE / MEMORY 及父链；PR #20 增加完整结构来源 |
-| 节点链（主→子→孙 Agent） | 部分完成 | 实际子/孙对话与父 Grant（[M17](sujie/docs/M17_ACTUAL_ANALYTICAL_AGENTS.md)）；角色/会话/MCP 调用未统一为一张图 |
-| token 级来源 | 部分完成 | 本地 Qwen tokenizer 映射；tokenizer 资产需 `dev.py prepare-tokenizer`，干净环境下相关测试会跳过 |
-| 调用详情 | 部分完成 | 记录 tool/ok/code 与参数哈希；完整参数/返回的受控原文未统一按 call ID 存储 |
-| 影响范围 | 已完成 | RESOURCE_READ/AFFECTED、接收端/Git/文件事实与 UNKNOWN |
-| DAG 可视化 | 部分完成 | 控制台 SVG 来源图（Artifact 节点+父边）；缺 Agent/MCP/决策/目标节点 |
-| 时序图 | 部分完成 | 控制台“决策时序”列表；无 User/Agent/Gateway/MCP 泳道时序图 |
+| 触发源 | 已完成 | `source` 节点：用户（TaskContract 目标/用户消息）/ 外部资源（带检测发现的 MCP 返回、网页）/ 记忆 |
+| 节点链（主→子→孙 Agent、MCP） | 已完成 | `agent`（父、深度、Grant 范围）、`mcp_server`、`gateway`、`tool_call`、`decision` 节点；仅凭账本即可推断三层 Agent 树（`test_trace_only_build_infers_the_same_agent_tree`） |
+| token 级来源 | 部分完成 | `span` 节点给出原文字符/UTF-8 字节/token 区间，零宽、全角、中文已测；token 为确定性 `sujie-simple-v1` 分词，非模型 token ID；Base64 等解码后载荷只到 Artifact 级 |
+| 调用详情 | 已完成（离线）/ 部分完成（控制台） | `ProvenanceRecorder` 保留参数，导出前统一脱敏（私钥、token、SECRET 原文及其 URL 编码均替换为长度+哈希）；控制台尚未接 Recorder，显示规范化效果+参数哈希 |
+| 影响范围 | 已完成 | `impact` 节点按本地文件/凭据存储/网络/Git/记忆分类，标 affected/pending/prevented |
+| DAG 可视化 | 已完成 | Mermaid + Graphviz DOT/SVG，攻击路径标红；控制台新增“攻击链路溯源”页 |
+| 时序图 | 已完成 | Mermaid `sequenceDiagram` 与纯 Python 泳道 SVG（User / 各 Agent / Gateway / 各 MCP） |
 
 ### 能力5 对抗鲁棒性（`detection_v2`，运行时默认，见[检测器版本](sujie/docs/DETECTOR_VERSIONS.md)）
 
@@ -103,7 +105,7 @@
 2. **P0 风险等级**：在 `M1Policy.decide` 给出独立风险依据（效果类别、来源发现、数据等级），不再由决策反推。
 3. **P1 执行前对齐**：在 ALLOW/ASK/BLOCK 前调用对齐评估并记录结论，至少覆盖“读后编码外发”“读后委派”两种组合。
 4. **P1 CVE-2025-53773 封闭复现**：用合成 IDE 工作区演示“注入→写 `.vscode/settings.json`→被硬阻断”的端到端链路与溯源图。
-5. **P1 溯源可视化**：在现有来源图上加入 Agent/MCP/决策节点与泳道时序视图。
+5. **P1 溯源收尾**：控制台接入 `ProvenanceRecorder` 展示可读参数；token 区间对接模型分词器；把溯源图纳入作品报告与测试流程说明。
 6. **P2 检测泛化**：语义检测统一编排（规则快速通路+任务感知分类），提升角色扮演/中文 agent 注入召回；真实多轮追加 API 与检索式记忆。
 
 

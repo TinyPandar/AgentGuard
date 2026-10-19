@@ -1018,3 +1018,15 @@ details[open] summary {
 @media (max-width: 750px) {
     .workspace .chat-workspace { height: calc(100dvh - 55px); }
 }
+
+.prov-verdict { border-left: 5px solid #be3039; background: #fff3f2; border-radius: 7px; padding: 12px 16px; margin-bottom: 14px; font-size: 13px; color: #6d2328; }
+.prov-verdict p { margin: 6px 0 0; font-size: 12px; overflow-wrap: anywhere; }
+.prov-chain { display: grid; grid-template-columns: 96px 1fr; gap: 6px 12px; font-size: 12px; margin: 0 0 16px; }
+.prov-chain dt { color: #64796f; }
+.prov-chain dd { margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.prov-chain dd span { background: #edf3ed; color: #38594e; border-radius: 5px; padding: 2px 8px; overflow-wrap: anywhere; }
+.prov-title { margin: 18px 0 8px; font-size: 13px; color: #38594e; }
+.graph-panel .graph-scroll img { display: block; max-width: none; }
+.prov-path td { background: #fff3f2; }
+.prov-params { font: 11px Consolas, monospace; overflow-wrap: anywhere; }
+.prov-params small { display: block; color: #8baa8a; }

@@ -259,6 +259,10 @@ def create_app(
     async def agent(operation: Literal["start", "cancel"], task_id: str, request: Request):
         return await request.app.state.manager.get(task_id).submit(f"agent_{operation}")
 
+    @router.get("/tasks/{task_id}/provenance")
+    async def provenance(task_id: str, request: Request):
+        return await request.app.state.manager.get(task_id).submit("provenance")
+
     @router.get("/tasks/{task_id}/impact/{artifact_id}")
     async def impact(task_id: str, artifact_id: str, request: Request):
         return await request.app.state.manager.get(task_id).submit("impact", artifact_id)

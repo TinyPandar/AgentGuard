@@ -1,6 +1,14 @@
 """Metadata projections: operator trace views never serialize artifact bodies."""
 
 from sujie_gateway.m1_runtime import sha
+from sujie_gateway.provenance_export import (
+    render_dot,
+    timeline_svg,
+    to_dot,
+    to_mermaid_flowchart,
+    to_mermaid_sequence,
+)
+from sujie_gateway.provenance_graph import build_provenance_graph
 
 
 def event_view(event: dict, payload: dict) -> dict:
@@ -128,4 +136,24 @@ def impact_view(artifacts: list[dict], events: list[dict], artifact_id: str) -> 
                 for resource in event["details"].get("resources", [])
             }
         ),
+    }
+
+
+def provenance_view(trace) -> dict:
+    """Typed attack-path graph + timeline; offsets and hashes only, no artifact text."""
+    graph = build_provenance_graph(trace, previews=False)
+    dot = to_dot(graph, path_only=bool(graph.attack_path))
+    try:
+        rendered = render_dot(dot, "svg")
+    except Exception:  # Graphviz is optional; Mermaid stays available.
+        rendered = None
+    return {
+        "schema": graph.to_dict()["schema"],
+        "graph": graph.to_dict(),
+        "dag_svg": rendered.decode("utf-8") if rendered else None,
+        "timeline_svg": timeline_svg(graph),
+        "mermaid": {
+            "dag": to_mermaid_flowchart(graph, path_only=bool(graph.attack_path)),
+            "timeline": to_mermaid_sequence(graph),
+        },
     }

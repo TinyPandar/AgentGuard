@@ -159,6 +159,34 @@ const tab = ref("trace"),
     selected = ref<Artifact | null>(null),
     impact = ref<Impact | null>(null);
 const policy = ref<{ snapshot_hash: string; dsl: string } | null>(null);
+type ProvNode = { id: string; type: string; label: string; seq: number; attrs: Record<string, any> };
+type ProvenanceView = {
+    graph: { focus: string | null; attack_path: string[]; summary: Record<string, any>; nodes: ProvNode[] };
+    dag_svg: string | null;
+    timeline_svg: string;
+    mermaid: { dag: string; timeline: string };
+};
+const provenance = ref<ProvenanceView | null>(null);
+const provenanceCalls = computed(() =>
+    (provenance.value?.graph.nodes ?? [])
+        .filter((n) => n.type === "tool_call" && !n.attrs.trusted_probe)
+        .map((n) => ({ node: n, decision: provNode(n.attrs.decision_node) })),
+);
+function provenanceTab() {
+    tab.value = "provenance";
+    provenance.value = null;
+    void run(async () => {
+        provenance.value = await api(`/tasks/${detail.value!.id}/provenance`);
+    });
+}
+function svgUri(svg: string) {
+    let binary = "";
+    new TextEncoder().encode(svg).forEach((b) => (binary += String.fromCharCode(b)));
+    return "data:image/svg+xml;base64," + btoa(binary);
+}
+function provNode(id: string) {
+    return provenance.value?.graph.nodes.find((n) => n.id === id);
+}
 const modelConfig = ref<ModelConfig | null>(null);
 const features = ref({ context_audit: false, scoped_user_input: false, model_approval: false, web_report: false, artifact_verify: false, git_delivery: false, delegated_report: false, memory_cycle: false, structured_workflows: false });
 const businessProfiles = ['event-timeline', 'issue-triage', 'attachment-audit', 'knowledge-reconcile'];
@@ -1123,6 +1151,11 @@ const graph = computed(() => {
                             来源与影响
                             <span>{{ detail.artifacts.length }}</span></button
                         ><button
+                            :class="{ active: tab === 'provenance' }"
+                            @click="provenanceTab"
+                        >
+                            攻击链路溯源</button
+                        ><button
                             :class="{ active: tab === 'approvals' }"
                             @click="tab = 'approvals'"
                         >
@@ -1259,6 +1292,150 @@ const graph = computed(() => {
                                 </div>
                             </li>
                         </ol>
+                    </section>
+                    <section
+                        v-else-if="tab === 'provenance'"
+                        class="card graph-panel"
+                    >
+                        <div class="section-head">
+                            <h2>跨 MCP / 子 Agent 攻击链路</h2>
+                            <span class="caption"
+                                >来源 · 载荷片段 · Agent · MCP · 工具调用 · 决策 · 影响</span
+                            >
+                        </div>
+                        <p v-if="!provenance" class="empty">正在重建调用链…</p>
+                        <template v-else>
+                            <div
+                                v-if="provenance.graph.summary.focus"
+                                class="prov-verdict"
+                            >
+                                <b
+                                    >{{ provenance.graph.summary.focus.decision }}
+                                    {{ provenance.graph.summary.focus.reason }}</b
+                                >
+                                · 规则 <code>{{ provenance.graph.summary.focus.rule }}</code>
+                                · 溯源风险
+                                <b>{{ provenance.graph.summary.focus.risk.level }}</b>
+                                <p>{{ provenance.graph.summary.focus.explanation }}</p>
+                            </div>
+                            <p v-else class="empty">
+                                当前任务没有被阻断或待审批的动作，下图为完整调用图。
+                            </p>
+                            <dl v-if="provenance.graph.summary.focus" class="prov-chain">
+                                <dt>触发来源</dt>
+                                <dd>
+                                    <span
+                                        v-for="s in provenance.graph.summary.trigger_sources"
+                                        :key="s.id"
+                                        >{{ s.kind }} · {{ s.locator }}</span
+                                    >
+                                </dd>
+                                <dt>Agent 链</dt>
+                                <dd>
+                                    <span
+                                        v-for="a in provenance.graph.summary.agent_chain"
+                                        :key="a.id"
+                                        >{{ a.label }}（深度 {{ a.depth }}）</span
+                                    >
+                                </dd>
+                                <dt>经过的 MCP</dt>
+                                <dd>
+                                    <span
+                                        v-for="m in provenance.graph.summary.mcp_servers"
+                                        :key="m"
+                                        >{{ m }}</span
+                                    >
+                                </dd>
+                                <dt>影响范围</dt>
+                                <dd>
+                                    <template
+                                        v-for="(items, category) in provenance.graph.summary
+                                            .impact_scope"
+                                        :key="category"
+                                        ><span v-for="item in items" :key="item"
+                                            >{{ category }} · {{ item }}</span
+                                        ></template
+                                    >
+                                </dd>
+                            </dl>
+                            <h3 class="prov-title">攻击路径 DAG</h3>
+                            <div class="graph-scroll">
+                                <img
+                                    v-if="provenance.dag_svg"
+                                    :src="svgUri(provenance.dag_svg)"
+                                    alt="攻击路径有向无环图"
+                                />
+                                <pre v-else>{{ provenance.mermaid.dag }}</pre>
+                            </div>
+                            <h3 class="prov-title">时序链路图</h3>
+                            <div class="graph-scroll">
+                                <img
+                                    :src="svgUri(provenance.timeline_svg)"
+                                    alt="泳道时序链路图"
+                                />
+                            </div>
+                            <h3
+                                v-if="provenance.graph.summary.payload_spans?.length"
+                                class="prov-title"
+                            >
+                                载荷定位（字符 / 字节 / token 区间）
+                            </h3>
+                            <table
+                                v-if="provenance.graph.summary.payload_spans?.length"
+                                class="token-table"
+                            >
+                                <thead>
+                                    <tr>
+                                        <th>片段</th><th>字符</th><th>UTF-8 字节</th
+                                        ><th>token</th><th>精度</th><th>指纹</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr
+                                        v-for="span in provenance.graph.summary.payload_spans"
+                                        :key="span.id"
+                                    >
+                                        <td>{{ span.id }}</td>
+                                        <td>{{ span.char_start }}–{{ span.char_end }}</td>
+                                        <td>{{ span.byte_start }}–{{ span.byte_end }}</td>
+                                        <td>{{ span.token_start }}–{{ span.token_end }}</td>
+                                        <td>{{ span.precision }}</td>
+                                        <td><code>{{ provNode(span.id)?.attrs.excerpt_hash }}</code></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <h3 class="prov-title">工具调用记录</h3>
+                            <table class="token-table">
+                                <thead>
+                                    <tr>
+                                        <th>序号</th><th>Agent</th><th>工具</th
+                                        ><th>参数（脱敏）</th><th>决策</th><th>结果</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr
+                                        v-for="row in provenanceCalls"
+                                        :key="row.node.id"
+                                        :class="{ 'prov-path': provenance.graph.attack_path.includes(row.node.id) }"
+                                    >
+                                        <td>{{ row.node.seq }}</td>
+                                        <td>{{ provNode(row.node.attrs.agent)?.label }}</td>
+                                        <td><code>{{ row.node.attrs.tool }}</code></td>
+                                        <td class="prov-params">
+                                            {{ JSON.stringify(row.node.attrs.params) }}
+                                            <small>{{ row.node.attrs.arguments_hash }}</small>
+                                        </td>
+                                        <td>
+                                            {{ row.decision?.attrs.decision }}
+                                            {{ row.decision?.attrs.reason }}
+                                        </td>
+                                        <td>
+                                            {{ row.node.attrs.result.ok ? "ok" : row.node.attrs.result.code }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </template>
                     </section>
                     <section
                         v-else-if="tab === 'graph'"

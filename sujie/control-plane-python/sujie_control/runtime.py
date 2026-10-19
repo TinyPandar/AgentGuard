@@ -56,7 +56,7 @@ from .profiles import (
     records,
 )
 from .timeline_query import TimelineQuery
-from .views import approval_view, artifact_view, event_view, impact_view
+from .views import approval_view, artifact_view, event_view, impact_view, provenance_view
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -377,6 +377,8 @@ class TaskSession:
                     in {"MODEL_REQUEST_CHECKED", "MODEL_RESPONSE_CHECKED", "MODEL_EGRESS_BLOCKED"}
                 ],
             }
+        if operation == "provenance":
+            return provenance_view(self.gateway.trace)
         if operation == "export":
             view = await self._view()
             payload = {
