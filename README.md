@@ -1,5 +1,112 @@
 # 溯界（Sujie / AgentGuard）
 
+## 赛题5 五项能力完成状态（2026-10-19 核对）
+
+> 核对方法：逐项对照[赛题原文快照](competition/research/2026-10-14/topic5-official.json)与本分支源码/测试，以[主线能力审计](competition/docs/MAIN_CAPABILITY_AUDIT_2026-10-19.md)（基线 `fb6e6e4`）为起点，补入其后的 PR #20（结构化返回来源）、PR #21（检测器 `detection_v2`）与本次敏感写入硬策略。
+> 状态口径：**已完成**＝代码+自动化测试覆盖赛题列明范围；**部分完成**＝有真实实现与测试，但赛题列明子项仍有缺口；**未完成**＝无实现。检测指标仅为规则初筛的离线评测，**不是 Agent ASR**。
+
+### 总览
+
+| 能力 | 状态 | 关键证据 | 主要缺口 |
+|---|---|---|---|
+| 1 多源注入识别 | 部分完成 | [`tool_result.py`](sujie/gateway-python/src/sujie_gateway/tool_result.py)、[`detection_v2.py`](sujie/gateway-python/src/sujie_gateway/detection_v2.py)、[`test_tool_result_sources.py`](sujie/tests/test_tool_result_sources.py)、[`test_operator_memory_cycle.py`](sujie/tests/test_operator_memory_cycle.py) | 无真实 PDF/DOCX/源码提取适配；无同会话追加多轮 API；记忆仅固定 key，无检索式召回 |
+| 2 意图—计划—工具对齐 | 部分完成 | [`alignment.py`](sujie/gateway-python/src/sujie_gateway/alignment.py)、[`sequence_alignment.py`](sujie/gateway-python/src/sujie_gateway/sequence_alignment.py)、[`test_alignment.py`](sujie/gateway-python/tests/test_alignment.py)、[`test_sequence_alignment.py`](sujie/tests/test_sequence_alignment.py) | 解释主要在 BLOCK 后生成，缺执行前独立偏离评估；跨轮组合越权仅覆盖“读凭据→外发” |
+| 3 工具策略 DSL 与三态 | 部分完成（五类规则均有实现） | [`dsl.py`](sujie/gateway-python/src/sujie_gateway/dsl.py)、[`policies/m1.yaml`](sujie/gateway-python/policies/m1.yaml)、[`sensitive_targets.py`](sujie/gateway-python/src/sujie_gateway/sensitive_targets.py)、下表五个测试 | 风险等级由决策反推（`ALLOW→LOW`，否则 `HIGH`），不是独立运行时风险；DSL 获得的上下文事实少 |
+| 4 跨 MCP 与子 Agent 溯源 | 部分完成 | `TraceLedger`（[`m1_runtime.py`](sujie/gateway-python/src/sujie_gateway/m1_runtime.py)）、[`tokenizer_mapper.py`](sujie/demo-agent/sujie_demo_agent/tokenizer_mapper.py)、控制台 [`App.vue`](sujie/console-vue/src/App.vue) 来源 SVG 与时间线 | DAG 只有 Artifact 节点，缺 Agent/MCP/决策节点；无分泳道时序图；调用参数主要存哈希 |
+| 5 对抗鲁棒性（七类绕过） | 部分完成（七类均有规则与测试） | [`detection_v2.py`](sujie/gateway-python/src/sujie_gateway/detection_v2.py)、[`zh_rules.py`](sujie/gateway-python/src/sujie_gateway/zh_rules.py)、[`test_seven_bypass_matrix.py`](sujie/tests/test_seven_bypass_matrix.py)、[`run_public_injection.py`](sujie/eval/run_public_injection.py) | 公开数据集 held-out 召回仅 30.6%；角色扮演/语义伪装依赖规则，尚无统一语义检测编排；真实多轮拆分未闭环 |
+
+### 能力1 多源注入识别
+
+| 子项 | 状态 | 证据 | 缺口 |
+|---|---|---|---|
+| 直接注入（用户输入） | 已完成 | `M1Gateway.register_user_input()`；[`test_bypass_runtime.py`](sujie/tests/test_bypass_runtime.py) DIRECT 参数化 | 仅建任务时一次输入 |
+| 间接：URL/网页 | 已完成 | [`network_policy.py`](sujie/gateway-python/src/sujie_gateway/network_policy.py)；`test_real_web_read_registers_origin_and_same_origin_redirect`（[`test_network_gateway.py`](sujie/tests/test_network_gateway.py)） | — |
+| 间接：文档 / 源码 | 部分完成 | 附件审计、证据读取等合成业务（[M21](sujie/docs/M21_FOUR_BUSINESS_WORKFLOWS.md)） | 无真实 PDF/DOCX/IDE 源码提取器 |
+| 间接：工单/邮件/Issue | 部分完成 | issue-triage、event-timeline 合成业务；[`agent_safety_bench_zh`](sujie/eval/public_injection_sources.py) 等公开样本离线评测 | 无真实邮件/Issue 服务适配 |
+| 间接：MCP 返回字段 | 已完成 | PR #20：嵌套/数组/额外字段及字段名均登记并扫描；`test_all_result_text_gets_registered_detected_and_bound_to_model_input` | — |
+| 间接：MCP 工具描述 | 已完成 | `StdioMCPProxy` 扫描工具元数据并绑定版本；[`test_tool_registration.py`](sujie/gateway-python/tests/test_tool_registration.py)；公开集 mcp_tool_poisoning held-out 召回 75% | — |
+| 记忆污染 | 部分完成 | [`memory_detection.py`](sujie/gateway-python/src/sujie_gateway/memory_detection.py)、跨会话 Memory（[M18](sujie/docs/M18_CROSS_SESSION_MEMORY.md)）、[`test_operator_memory_cycle.py`](sujie/tests/test_operator_memory_cycle.py) | 无检索/chunk 召回接口 |
+
+### 能力2 意图—计划—工具语义对齐
+
+| 子项 | 状态 | 证据 | 缺口 |
+|---|---|---|---|
+| 可信任务意图（TaskContract） | 已完成 | 九类契约 [`contracts/schemas`](sujie/contracts/schemas) | 目标主要来自固定 profile |
+| 偏离判定与可解释结论 | 部分完成 | `explain_alignment()` 输出 GOAL/RESOURCE/SIDE_EFFECT/DATA_FLOW 四维解释 | 仅在 BLOCK 后调用，非执行前独立评估 |
+| 多步/跨轮组合偏离 | 部分完成 | `sequence_alignment.py` 记录 credential.read→transfer，保留 UNKNOWN | 缺“编码后外发、分片累计、读后委派、子 Agent 中转”等组合状态机 |
+
+### 能力3 工具策略 DSL 与三态决策
+
+| 赛题列明规则 | 状态 | 证据 |
+|---|---|---|
+| fs.write 敏感路径 | 已完成（本次补强） | [`sensitive_targets.py`](sujie/gateway-python/src/sujie_gateway/sensitive_targets.py)：`.ssh`/`authorized_keys`/`.git/hooks`/CI 工作流/`.env`/shell 启动文件/私钥/`.vscode` 等在**放宽的可信 Grant 下仍硬阻断**；[`test_sensitive_write_targets.py`](sujie/tests/test_sensitive_write_targets.py)（真实 stdio MCP，文件确认未生成，含正常对照） |
+| net.fetch 外发会话内已读秘密 | 已完成 | `test_read_secret_then_query_header_body_exfil_is_blocked_before_http`（[`test_network_gateway.py`](sujie/tests/test_network_gateway.py)） |
+| exec base64 / curl\|sh | 已完成 | [`execution_policy.py`](sujie/gateway-python/src/sujie_gateway/execution_policy.py) 只允许注册程序与确切 argv；[`test_execution_gateway.py`](sujie/tests/test_execution_gateway.py) 含 base64 解码执行与 curl 用例 |
+| 代码检视期间 git.push | 已完成 | `test_review_blocks_push_and_explicit_publication_asks_then_exact_commit_once`（[`test_git_delivery_gateway.py`](sujie/tests/test_git_delivery_gateway.py)） |
+| 子 Agent 传递秘密 | 已完成 | `test_secret_or_forged_input_never_creates_child_model`（[`test_analysis_delegation_boundary.py`](sujie/tests/test_analysis_delegation_boundary.py)） |
+| 三态 ask/allow/block | 已完成 | DSL `allow/ask/block/hard_block`；ASK 审批绑定、执行前复核（[M12](sujie/docs/M12_AUTONOMOUS_APPROVAL_AND_BUDGET.md)、[`test_dsl.py`](sujie/gateway-python/tests/test_dsl.py)） |
+| 运行时风险等级 | 部分完成 | 决策记录有 `risk` 字段 | 由决策反推，uncertainty 固定为 0 |
+
+### 能力4 跨 MCP 与子 Agent 溯源
+
+| 子项 | 状态 | 证据 / 缺口 |
+|---|---|---|
+| 触发源 | 已完成 | Artifact 来源类型 USER_MESSAGE / MCP_TOOL_RESULT / WEB_PAGE / MEMORY 及父链；PR #20 增加完整结构来源 |
+| 节点链（主→子→孙 Agent） | 部分完成 | 实际子/孙对话与父 Grant（[M17](sujie/docs/M17_ACTUAL_ANALYTICAL_AGENTS.md)）；角色/会话/MCP 调用未统一为一张图 |
+| token 级来源 | 部分完成 | 本地 Qwen tokenizer 映射；tokenizer 资产需 `dev.py prepare-tokenizer`，干净环境下相关测试会跳过 |
+| 调用详情 | 部分完成 | 记录 tool/ok/code 与参数哈希；完整参数/返回的受控原文未统一按 call ID 存储 |
+| 影响范围 | 已完成 | RESOURCE_READ/AFFECTED、接收端/Git/文件事实与 UNKNOWN |
+| DAG 可视化 | 部分完成 | 控制台 SVG 来源图（Artifact 节点+父边）；缺 Agent/MCP/决策/目标节点 |
+| 时序图 | 部分完成 | 控制台“决策时序”列表；无 User/Agent/Gateway/MCP 泳道时序图 |
+
+### 能力5 对抗鲁棒性（`detection_v2`，运行时默认，见[检测器版本](sujie/docs/DETECTOR_VERSIONS.md)）
+
+| 绕过类别 | 状态 | 证据 |
+|---|---|---|
+| 多语言混排/Emoji | 已完成（规则） | 中/日/俄/德/西/法覆盖指令及繁简折叠（[`zh_rules.py`](sujie/gateway-python/src/sujie_gateway/zh_rules.py)） |
+| Unicode 同形字/零宽/全半角 | 已完成（规则） | NFKC、Cf 过滤、西里尔同形映射 |
+| 指令拆分/多轮 | 部分完成 | 单文本片段重组；真实多轮追加未闭环 |
+| 注释符拼接 | 已完成（规则） | HTML 注释、伪角色分隔符、MCP `<IMPORTANT>` 标记 |
+| 字符编码 | 已完成（规则） | 有界 percent/HTML/\\u/Base64 字段解码 |
+| 上下文稀释 | 已完成（有界） | 1,000,000 字符内完整扫描，超限拒绝而非截断（`ScanLimitExceeded`） |
+| 语义伪装 | 部分完成 | 伪造审批+敏感效果、角色扮演规则；公开 jailbreak 类召回低 |
+
+七类×三来源合成矩阵（42 条，开发集）：召回 21/21、误报 0/21（`python eval/run_bypass_matrix.py`）。公开数据集 held-out（从未用于调参，`python eval/run_public_injection.py --full --split heldout`）：
+
+| 来源 | 召回 | 精确率 | 正常样本误报率 |
+|---|---|---|---|
+| deepset/prompt-injections | 0.217 | 1.00 | 0 |
+| Lakera/gandalf_ignore_instructions（仅攻击） | 0.688 | 1.00 | — |
+| mcp-tool-poisoning | 0.750 | 1.00 | 0 |
+| xTRam1/safe-guard | 0.606 | 0.975 | 0.71% |
+| agent-safety-bench-zh | 0.158 | 1.00 | 0 |
+| pi-benchmark-chinese（繁体） | 0.088 | 1.00 | 0 |
+| JailBench（独立来源） | 0.200 | 1.00 | — |
+| Safety-Prompts 中文正常文本 | — | — | 0.23% |
+| **全部 held-out** | **0.306** | 0.982 | 0.37% |
+| **中文 held-out** | **0.198** | 0.984 | 0.23% |
+
+### 交付物清单
+
+| 交付物 | 状态 | 位置 |
+|---|---|---|
+| 部署说明 | 部分完成（需按当前版复核） | [`部署说明-溯界.md`](competition/submission/部署说明-溯界.md)、[`sujie/deploy`](sujie/deploy) |
+| 整体设计文档 | 部分完成（报告基线为 `99cba60`，未含 PR #20/#21） | [`作品报告-溯界.md`](competition/submission/作品报告-溯界.md)、[LaTeX](competition/submission/latex)、[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |
+| 源码 | 已完成 | [`sujie/`](sujie) |
+| 测试样例及测试流程说明 | 部分完成（需补 `detection_v2` 与公开数据集评测流程） | [`测试样例与流程说明-溯界.md`](competition/submission/测试样例与流程说明-溯界.md)、[`sujie/eval/cases`](sujie/eval/cases) |
+| 原创性声明 | 部分完成（待全员签名） | [`作品原创性声明-溯界.md`](competition/submission/作品原创性声明-溯界.md) |
+| 加分：CVE 复现 | 未完成 | 仅有 CVE-2025-53773 防御场景（`.vscode/settings.json` 写入被硬阻断，见能力3）；无真实版本复现，CVE-2024-49035 未涉及 |
+
+### 缺口与下一步（截止 2026-10-22）
+
+1. **P0 定稿材料**：用当前提交重建作品报告/PDF 与测试流程说明，补入 PR #20、`detection_v2` 指标与敏感写入硬策略；完成匿名检查、全员签名与上传回执。
+2. **P0 风险等级**：在 `M1Policy.decide` 给出独立风险依据（效果类别、来源发现、数据等级），不再由决策反推。
+3. **P1 执行前对齐**：在 ALLOW/ASK/BLOCK 前调用对齐评估并记录结论，至少覆盖“读后编码外发”“读后委派”两种组合。
+4. **P1 CVE-2025-53773 封闭复现**：用合成 IDE 工作区演示“注入→写 `.vscode/settings.json`→被硬阻断”的端到端链路与溯源图。
+5. **P1 溯源可视化**：在现有来源图上加入 Agent/MCP/决策节点与泳道时序视图。
+6. **P2 检测泛化**：语义检测统一编排（规则快速通路+任务感知分类），提升角色扮演/中文 agent 注入召回；真实多轮追加 API 与检索式记忆。
+
+
 > **2026-10-19 实施首批：**[结构化工具返回来源接入](sujie/docs/M26_RESULT_SOURCE_STATUS.md)已补嵌套/数组/额外字段和字段名扫描、完整结构来源及审批续跑绑定；新增21项专项，本地全量1046通过/1跳过，跨平台Python CI待确认。其余审计缺口继续保留。
 
 > **2026-10-19 最新主线审计：**以 `fb6e6e4`（含PR #18）核对源码与五项赛题要求，见[逐项完成度、反例与补强工作包](competition/docs/MAIN_CAPABILITY_AUDIT_2026-10-19.md)。本轮97项定向回归通过、1项资产缺失跳过；该基线Ubuntu全量通过，Windows仍有1项终态等待失败。报告通过不表示五项能力或最终交付已全部验收。

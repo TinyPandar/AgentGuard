@@ -46,6 +46,7 @@ from .memory_policy import MemoryPolicy
 from .model_context import contains_protected, safe_path
 from .network_policy import NetworkPolicy, payload_values
 from .sanitization import extract_public_ipv4_iocs, render_public_ipv4_iocs
+from .sensitive_targets import sensitive_write_target
 from .tool_result import ToolResultError, ToolResultSnapshot, snapshot_tool_result
 
 CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
@@ -464,6 +465,9 @@ class M1Policy:
             return GateDecision("BLOCK", True, "POLICY_SNAPSHOT_MISMATCH", action)
         if a["contract_id"] != c["contract_id"] or a["grant_id"] != g["grant_id"]:
             return GateDecision("BLOCK", True, "GRANT_MISMATCH", action)
+        if kind == "file.write" and any(sensitive_write_target(r) for r in resources):
+            # Hard deny before any grant/contract widening or approval can apply.
+            return GateDecision("BLOCK", True, "SENSITIVE_TARGET_FORBIDDEN", action)
         granted = kind in g["effects"] or (
             kind == "file.write"
             and "file.write:report" in g["effects"]
