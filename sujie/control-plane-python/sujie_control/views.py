@@ -1,8 +1,9 @@
 """Metadata projections: operator trace views never serialize artifact bodies."""
 
+from collections.abc import Callable
+
 from sujie_gateway.m1_runtime import sha
 from sujie_gateway.provenance_export import (
-    render_dot,
     timeline_svg,
     to_dot,
     to_mermaid_flowchart,
@@ -139,12 +140,12 @@ def impact_view(artifacts: list[dict], events: list[dict], artifact_id: str) -> 
     }
 
 
-def provenance_view(trace) -> dict:
+def provenance_view(trace, *, renderer: Callable[[str, str], bytes | None] | None = None) -> dict:
     """Typed attack-path graph + timeline; offsets and hashes only, no artifact text."""
     graph = build_provenance_graph(trace, previews=False)
     dot = to_dot(graph, path_only=bool(graph.attack_path))
     try:
-        rendered = render_dot(dot, "svg")
+        rendered = renderer(dot, "svg") if renderer is not None else None
     except Exception:  # Graphviz is optional; Mermaid stays available.
         rendered = None
     return {
