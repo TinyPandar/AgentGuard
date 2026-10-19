@@ -819,7 +819,7 @@ async def run_tool_agent(
                                     "source_id"
                                 ],
                             }
-                            for item in sorted(gateway._exposed_artifacts)
+                            for item in gateway.reference_artifact_ids()
                             if gateway.trace.artifacts[item].to_dict()["origin"]["type"]
                             == "MCP_TOOL_RESULT"
                         ],
@@ -827,7 +827,10 @@ async def run_tool_agent(
                     )
                 )
             if result.get("decision") == "ASK" and not result.get("approved") and hooks:
+                approval_decision_id = result["decision_id"]
                 result = await hooks.resolve_approval(result)
+                if result.get("ok") and result.get("approved"):
+                    gateway.expose_committed_result(approval_decision_id)
                 if result.get("code") in {
                     "APPROVAL_REJECTED",
                     "APPROVAL_WAIT_TIMEOUT",

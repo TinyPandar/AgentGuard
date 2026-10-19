@@ -1,5 +1,7 @@
 # 全部文档索引与交接范围
 
+> 2026-10-19实施入口：[结构化工具返回来源首批](M26_RESULT_SOURCE_STATUS.md) / [ADR 003](adr/ADR-003-structured-tool-results.md)。审计历史结论保留；本批新增实现和验证单独记录。
+
 > 2026-10-19最新复核入口：[主线能力审计与补强工作包](../../competition/docs/MAIN_CAPABILITY_AUDIT_2026-10-19.md) / [机器可读验证记录](../../docs/validation/MAIN_CAPABILITY_AUDIT_2026-10-19.json)，审计基线 `fb6e6e4`；下文M25和历史阶段记录保留各自版本。
 
 更新：2026-10-18。主线为 `sujie/`，最新进展是M25同事实比较与三来源有限代表；脚本与来源矩阵已独立核验，完整离线HTTP及工程检查边界见[M25记录](M25_STATUS.md)。M24最终v2及以前验收保留原阶段，M21四业务后停止属于历史状态。
