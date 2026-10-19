@@ -75,11 +75,14 @@ def evaluate_sample() -> dict:
     return report
 
 
-def evaluate_full() -> dict:
+def evaluate_full(split: str = "heldout") -> dict:
     cases = []
-    for path in sorted(CACHE.glob("*.jsonl")):
+    base = CACHE / "tune" if split == "tune" else CACHE
+    for path in sorted(base.glob("*.jsonl")):
         sid = path.stem
-        for i, line in enumerate(path.read_text("utf-8").splitlines()):
+        for i, line in enumerate(path.read_text("utf-8").split("\n")):
+            if not line:
+                continue
             row = json.loads(line)
             cases.append(
                 {
@@ -90,16 +93,17 @@ def evaluate_full() -> dict:
                 }
             )
     report = score(cases)
-    report["dataset_id"] = "public-injection-full-cache"
+    report["dataset_id"] = f"public-injection-full-{split}"
     return report
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--full", action="store_true")
+    parser.add_argument("--split", choices=("heldout", "tune"), default="heldout")
     parser.add_argument("--out", type=Path)
     args = parser.parse_args()
-    report = evaluate_full() if args.full else evaluate_sample()
+    report = evaluate_full(args.split) if args.full else evaluate_sample()
     text = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)

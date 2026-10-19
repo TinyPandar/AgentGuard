@@ -11,7 +11,7 @@ from urllib.parse import unquote
 
 from .contracts import DetectionFinding
 
-DETECTOR_VERSION = "rules-v0.4"
+DETECTOR_VERSION = "rules-v0.5"
 MAX_SCAN_CHARS = 1_000_000
 OVERRIDE_PATTERNS = (
     re.compile(r"ignore\s+(?:all\s+)?(?:previous|prior)\s+instructions", re.I),
@@ -90,6 +90,125 @@ LOOKALIKES = str.maketrans(
 )
 MAX_SEGMENTS = 32
 
+# rules-v0.5: broader public-dataset coverage (tuned on train/tune splits only).
+_EN_TARGET = (
+    r"(?:instructions?|directions?|directives?|rules?|guidelines?|prompts?|commands?"
+    r"|restrictions?|limitations?|constraints?|policies|programming|orders|guardrails?)"
+)
+_ZH_TARGET = (
+    r"(?:指令|指示|任务|任務|规则|規則|限制|策略|设定|設定|提示词|提示詞|规范|規範|约束|約束)"
+)
+V5_RULES = (
+    (
+        "CONTEXT_HIJACK",
+        "untrusted_text_requests_instruction_override",
+        re.compile(
+            r"\b(?:ignore|disregard|forget|skip|override|bypass|abandon|discard|delete|erase)\b"
+            r"[^.\n]{0,40}?\b(?:previous|prior|above|earlier|preceding|former|original|initial"
+            r"|all|any|your|these|those|system|below|every)\b[^.\n]{0,30}?\b" + _EN_TARGET + r"\b"
+            r"|\bforget\s+(?:about\s+)?(?:everything|all\s+(?:of\s+)?(?:that|this|the\s+above))"
+            r"|\b(?:new|updated|real|true)\s+instructions?\s*(?:[:：]|follow|are\b)"
+            r"|\bfrom\s+now\s+on,?\s+you\s+(?:are|will|must|shall)\b"
+            r"|\byou\s+are\s+now\s+(?:in\s+)?(?:dan|developer\s+mode|jailbroken|unrestricted|free)"
+            r"|\b(?:without|with\s+no|no)\s+(?:any\s+)?(?:restrictions|filters|limitations"
+            r"|censorship|ethical\s+guidelines)\b"
+            r"|\bdeveloper\s+mode\b|\bjailbr(?:eak|oken)\b",
+            re.I,
+        ),
+    ),
+    (
+        "CONTEXT_HIJACK",
+        "untrusted_text_requests_prompt_or_secret_disclosure",
+        re.compile(
+            r"\b(?:reveal|show|print|tell|repeat|output|display|give|disclose|spell|leak|share"
+            r"|what\s+(?:is|are|was|were))\b[^.\n?]{0,40}?(?:system\s+prompt|initial\s+prompt"
+            r"|your\s+(?:instructions|prompt|rules|secret|password)|the\s+(?:secret\s+)?password"
+            r"|hidden\s+(?:instructions?|knowledge|password|prompt)|confidential\s+(?:data|information))",
+            re.I,
+        ),
+    ),
+    (
+        "CONTEXT_HIJACK",
+        "untrusted_text_requests_instruction_override",
+        re.compile(
+            r"(?:ignorier\w*|vergiss|vergessen|missachte\w*)\b[^.\n]{0,40}"
+            r"(?:anweisungen|befehle|regeln|vorgaben|ausführungen|alles)"
+            r"|(?:neue|folgende)\s+anweisungen|nun\s+folgen\s+neue"
+            r"|olvid[ae]\s+todo|ignora\s+(?:todas\s+)?(?:las\s+)?instrucciones"
+            r"|oublie[zr]?\s+(?:toutes\s+)?(?:les\s+)?instructions",
+            re.I,
+        ),
+    ),
+    (
+        "CONTEXT_HIJACK",
+        "untrusted_text_requests_instruction_override",
+        re.compile(
+            r"(?:忽略|无视|無視|忽视|忽視|不要理会|不要理會|忘记|忘記|跳过|跳過|绕过|繞過|取消|抛开|拋開)"
+            r"[^。\n]{0,12}"
+            + _ZH_TARGET
+            + r"|(?:关闭|關閉|禁用|停用|绕开|繞開)[^。\n]{0,10}(?:审批|審批|审计|審計|日志|日誌|人工确认|人工確認|安全)"
+            r"|你现在是[^。\n]{0,20}(?:不受|没有|無|无)[^。\n]{0,4}限制"
+            r"|你現在是[^。\n]{0,20}(?:不受|沒有|無)[^。\n]{0,4}限制"
+        ),
+    ),
+    (
+        "TOOL_POISONING",
+        "untrusted_text_directs_sensitive_exfiltration",
+        re.compile(
+            r"\b(?:append|send|post|include|attach|forward|leak|exfiltrat\w*|upload|copy|email"
+            r"|read|cat|dump)\b[^\n]{0,80}?(?:\bapi[\s_-]?keys?\b|\bpasswords?\b|\bcredentials\b"
+            r"|\bprivate\s+keys?\b|id_rsa|~/\.ssh|\.aws/|/etc/passwd|(?<![\w.])\.env\b"
+            r"|\bconversation(?:\s+history)?\s+to\b|\bchat\s+history\b)"
+            r"|\b(?:without\s+(?:telling|informing|notifying)\s+(?:the\s+)?user|silently\s+(?:read|send"
+            r"|post|upload|run|execute|call))\b"
+            r"|\bwhen\s+this\s+tool\s+is\s+(?:listed|loaded|called|invoked|used)\b"
+            r"|<\s*/?\s*(?:important|system|inst)\s*>|\[/?(?:system|inst)\]"
+            r"|\bcurl\b[^\n|]{0,120}\|\s*(?:ba|z)?sh\b",
+            re.I,
+        ),
+    ),
+    (
+        "TOOL_POISONING",
+        "untrusted_text_directs_sensitive_exfiltration",
+        re.compile(
+            r"(?:发送|發送|转发|轉發|附在|附带|附帶|上传|上傳|打包|外发|外發|提交)[^。\n]{0,40}"
+            r"(?:https?://|webhook|id_rsa|\.ssh|密钥|密鑰|私钥|私鑰|对话历史|對話歷史|api\s*key)"
+            r"|(?:请|請)[^。\n]{0,20}(?:执行|執行)\s*curl|(?:不告诉|不告訴|瞒着|瞞著)用户"
+            r"|(?:^|['‘“「:：])\s*(?:系统|系統)\s*[:：]",
+            re.I | re.M,
+        ),
+    ),
+    (
+        "CONTEXT_HIJACK",
+        "untrusted_text_requests_instruction_override",
+        re.compile(
+            r"\b(?:ignore|disregard|reject|forget)\s+(?:all\s+|any\s+|the\s+)?(?:that|this"
+            r"|instructions|anything\s+(?:i|you)\b|everything)"
+            r"|\bdisregarding\s+(?:the\s+)?(?:articles?|context|above|instructions)"
+            r"|\b(?:answer|respond)\s+(?:only\s+)?(?:by|with|from)\s+your\s+own\s+knowledge\s+and\s+not"
+            r"|\b(?:list|repeat|tell|show|reveal|print|what\s+(?:are|were|is|was))\b[^.\n?]{0,30}?"
+            r"\b(?:prior|previous|initial|original|exact|first|hidden)\s+(?:\w+\s+)?"
+            r"(?:instructions?|intstructions|prompts?|guidelines|rules)"
+            r"|\b(?:story|article|document|poem|response|reply|essay|letter)\s+(?:that\s+)?"
+            r"(?:begins|starts|starting|beginning)\s+with\s+['\"‘“]"
+            r"|\b(?:disclose|give|share|provide|reveal)\b[^.\n]{0,30}?\b(?:confidential|private"
+            r"|sensitive|restricted)\s+(?:\w+\s+)?(?:information|data|records)"
+            r"|(?:anweisungen|ausführungen|alles)[^.\n]{0,30}(?:ignorieren|vergessen)"
+            r"|zaboravi\s+sve",
+            re.I,
+        ),
+    ),
+    (
+        "TOOL_POISONING",
+        "untrusted_text_directs_agent_action",
+        re.compile(
+            r"(?:删除|刪除|清空|篡改)[^。\n]{0,15}(?:audit|审计|審計|日志|日誌|记录|記錄)"
+            r"|(?:改为|改為|设置为|設置為)?允许\s*root|(?:关掉|關掉|关闭|關閉)[^。\n]{0,8}(?:防火墙|防火牆|杀毒|殺毒)",
+            re.I,
+        ),
+    ),
+)
+
 
 class ScanLimitExceeded(ValueError):
     """An incomplete scan cannot be interpreted as a clean result."""
@@ -167,6 +286,9 @@ def _scan(view: str) -> tuple[str, str] | None:
             break
         if directive:
             return "TOOL_POISONING", "untrusted_text_directs_agent_action"
+        for family, reason, pattern in V5_RULES:
+            if pattern.search(candidate):
+                return family, reason
         fragment = _fragments(candidate)
         if fragment and any(
             pattern.search(fragment) for pattern in (*OVERRIDE_PATTERNS, *EXTRA_OVERRIDE_PATTERNS)

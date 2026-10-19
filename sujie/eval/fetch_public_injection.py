@@ -26,10 +26,12 @@ PER_CLASS = 20
 MAX_TEXT = 4000
 
 
-def fetch(source) -> list[dict]:
+def _load(source, files) -> list[dict]:
     rows = []
-    for path in source.files:
+    for path in files:
         target = CACHE / source.source_id / Path(path).name
+        if path in source.train_files:
+            target = target.with_name("train-" + target.name)
         if not target.exists():
             target.parent.mkdir(parents=True, exist_ok=True)
             with urllib.request.urlopen(source.url(path), timeout=60) as resp:
@@ -38,8 +40,28 @@ def fetch(source) -> list[dict]:
         for i, row in enumerate(source.rows(path, raw)):
             row.setdefault("upstream_id", f"{Path(path).stem}:{i}")
             rows.append(row)
-    out = CACHE / f"{source.source_id}.jsonl"
-    out.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), "utf-8")
+    return rows
+
+
+def _write(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), "utf-8")
+
+
+def _tune_bucket(upstream_id: str) -> bool:
+    return hashlib.sha256(f"tune-v1:{upstream_id}".encode()).digest()[0] % 2 == 0
+
+
+def fetch(source) -> list[dict]:
+    """Return evaluation rows; also write held-out (CACHE/*.jsonl) and tune (CACHE/tune/)."""
+    rows = _load(source, source.files)
+    if source.train_files:
+        tune, held = _load(source, source.train_files), rows
+    else:  # single published split: deterministic 50/50 hash split by upstream id
+        tune = [r for r in rows if _tune_bucket(r["upstream_id"])]
+        held = [r for r in rows if not _tune_bucket(r["upstream_id"])]
+    _write(CACHE / f"{source.source_id}.jsonl", held)
+    _write(CACHE / "tune" / f"{source.source_id}.jsonl", tune)
     return rows
 
 

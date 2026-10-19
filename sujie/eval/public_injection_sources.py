@@ -25,6 +25,7 @@ class Source:
     capability: str
     attack_source: str
     rows: Callable[[str, bytes], Iterable[dict]]
+    train_files: tuple[str, ...] = ()
 
     def url(self, path: str) -> str:
         return HF.format(repo=self.repo, rev=self.revision, path=path)
@@ -110,6 +111,7 @@ SOURCES = (
         "DIRECT (en/de, mixed-language)",
         "DIRECT",
         _deepset,
+        train_files=("data/train-00000-of-00001-9564e8b05b4757ab.parquet",),
     ),
     Source(
         "gandalf",
@@ -121,6 +123,7 @@ SOURCES = (
         "DIRECT override (attack-only, recall)",
         "DIRECT",
         _gandalf,
+        train_files=("data/train-00000-of-00001-ded53be747ff55cd.parquet",),
     ),
     Source(
         "mcp_tool_poisoning",
@@ -154,6 +157,7 @@ SOURCES = (
         "Chinese (Traditional) injection/jailbreak, download-only",
         "DIRECT",
         _eric_zh,
+        train_files=("data/train-00000-of-00001.parquet",),
     ),
     Source(
         "safe_guard",
@@ -165,6 +169,7 @@ SOURCES = (
         "DIRECT synthetic (en), download-only",
         "DIRECT",
         _xtram,
+        train_files=("data/train-00000-of-00001.parquet",),
     ),
 )
 BY_ID = {s.source_id: s for s in SOURCES}
