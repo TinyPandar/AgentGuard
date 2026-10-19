@@ -1,5 +1,7 @@
 # 已完成工作简明汇总
 
+> 2026-10-19：最新源码基线 `fb6e6e4` 的[逐项能力审计](../../competition/docs/MAIN_CAPABILITY_AUDIT_2026-10-19.md)已完成。新增97项专项通过、1项tokenizer资产跳过；Ubuntu全量通过，Windows尚有1项终态等待失败。统一返回字段、执行前研判、独立风险/敏感目标硬策略、完整调用图和绕过覆盖继续待补；未新增业务实现或云实验。
+
 > 2026-10-18 后续进度：[聊天控制台](CONSOLE_CHAT_CHECKPOINT.md)，与下文历史记录分开解释。
 
 交接基准：2026-10-15；更新至2026-10-18的M25。先读[M25与项目总体报告](../../competition/docs/M25_AND_OVERALL_REPORT_2026-10-18.md)及[M25阶段记录](M25_STATUS.md)，下一步见[M25安排](M25_NEXT_STEPS.md)；M24及以前结果保留各自版本。
