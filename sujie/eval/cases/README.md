@@ -24,3 +24,9 @@ $env:SUJIE_BAILIAN_CREDENTIAL_CSV = 'C:\path\outside\repo\credentials.csv'
 新增 `bypass_matrix_v2.json`：DIRECT/INDIRECT/MEMORY × 七类绕过 × 攻击/正常对照（42 条合成规则样本）。
 从 `sujie/` 运行 `python dev.py eval-bypass`，或运行 `python eval/run_bypass_matrix.py --out eval/reports/runs/seven_bypass_v2.json` 生成不可覆盖的结果。
 评测的是初筛召回和误报，不是 Agent ASR，也未自动完成三来源真实端到端链路；完整边界见 [七类绕过矩阵](../../docs/SEVEN_BYPASS_MATRIX.md)。
+
+
+新增 `public_injection_sample_v1.json`：来自公开数据集（deepset/prompt-injections、Lakera/gandalf_ignore_instructions、
+fevziegeyurtsevenler/mcp-tool-poisoning、uninhibited-scholar/agent-safety-bench-zh，固定revision，仅含可再分发许可）的
+分层抽样（每源≤20攻击+≤20正常，140条）。全量下载（含无明确许可的仅下载源）：`python eval/fetch_public_injection.py`，
+缓存在被忽略的 `eval/.cache/`；评测：`python eval/run_public_injection.py [--full]`。仅评规则初筛，不是Agent ASR。
