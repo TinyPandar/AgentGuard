@@ -39,9 +39,7 @@ def test_fragments_across_verified_artifacts_are_scanned_with_provenance():
         {"artifact_id": a, "start": 0, "end": 2},
         {"artifact_id": b, "start": 0, "end": len("nore previous instructions")},
     ]
-    _, clean = detect_indirect_segments(
-        [(a, "日志：连接失败"), (b, "继续分析时区")], new_id()
-    )
+    _, clean = detect_indirect_segments([(a, "日志：连接失败"), (b, "继续分析时区")], new_id())
     assert clean is None
 
 

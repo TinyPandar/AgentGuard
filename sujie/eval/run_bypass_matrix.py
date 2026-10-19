@@ -41,10 +41,7 @@ def evaluate(path: Path = DATASET) -> dict:
     seen_ids, seen_cells = set(), set()
     confusion = {"tp": 0, "fn": 0, "fp": 0, "tn": 0}
     grouped = {
-        source: {
-            family: {"tp": 0, "fn": 0, "fp": 0, "tn": 0}
-            for family in families
-        }
+        source: {family: {"tp": 0, "fn": 0, "fp": 0, "tn": 0} for family in families}
         for source in sources
     }
     outcomes = []

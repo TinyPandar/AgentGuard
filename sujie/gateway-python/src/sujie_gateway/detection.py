@@ -56,7 +56,8 @@ EXTRA_OVERRIDE_PATTERNS = (
     re.compile(r"игнорируй\s+(?:предыдущие|прошлые)\s+инструкции", re.I),
     re.compile(
         r"i[^\w]{0,3}g[^\w]{0,3}n[^\w]{0,3}o[^\w]{0,3}r[^\w]{0,3}e\s+"
-        r"(?:previous|prior)\s+instructions", re.I
+        r"(?:previous|prior)\s+instructions",
+        re.I,
     ),
 )
 FORGED_AUTHORITY = re.compile(
@@ -135,7 +136,7 @@ def _fragments(view: str) -> str:
     pieces = []
     for index, match in enumerate(matches):
         end = matches[index + 1].start() if index + 1 < len(matches) else len(view)
-        piece = view[match.end():end].strip(" \t\r\n；;，,。.")
+        piece = view[match.end() : end].strip(" \t\r\n；;，,。.")
         if len(piece) > 512:
             return ""
         pieces.append(piece)
@@ -158,10 +159,9 @@ def _scan(view: str) -> tuple[str, str] | None:
             CONCEALMENT_DIRECTIVE.search(candidate) or PARAMETER_REWRITE.search(candidate)
         )
         for match in AGENT_DIRECTIVE.finditer(candidate):
-            if (
-                match.group().lower().rstrip().endswith(("call", "use"))
-                and SELF_TOOL_GUIDANCE.match(candidate, match.end())
-            ):
+            if match.group().lower().rstrip().endswith(
+                ("call", "use")
+            ) and SELF_TOOL_GUIDANCE.match(candidate, match.end()):
                 continue
             directive = True
             break
@@ -234,8 +234,7 @@ def detect_indirect_segments(
     spans are reported; normalized positions are not raw-source offsets.
     """
     if not 1 <= len(segments) <= MAX_SEGMENTS or any(
-        not isinstance(sid, str) or not isinstance(content, str)
-        for sid, content in segments
+        not isinstance(sid, str) or not isinstance(content, str) for sid, content in segments
     ):
         raise ValueError("INVALID_SCAN_SEGMENTS")
     if len({sid for sid, _ in segments}) != len(segments):
