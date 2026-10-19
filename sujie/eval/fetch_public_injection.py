@@ -55,13 +55,23 @@ def _tune_bucket(upstream_id: str) -> bool:
 def fetch(source) -> list[dict]:
     """Return evaluation rows; also write held-out (CACHE/*.jsonl) and tune (CACHE/tune/)."""
     rows = _load(source, source.files)
-    if source.train_files:
+    if source.cap and len(rows) > source.cap:
+        rows = random.Random(f"cap-v1:{source.source_id}").sample(rows, source.cap)
+    if source.role in {"tune", "heldout"}:
+        tune, held = (rows, []) if source.role == "tune" else ([], rows)
+    elif source.train_files:
         tune, held = _load(source, source.train_files), rows
     else:  # single published split: deterministic 50/50 hash split by upstream id
         tune = [r for r in rows if _tune_bucket(r["upstream_id"])]
         held = [r for r in rows if not _tune_bucket(r["upstream_id"])]
-    _write(CACHE / f"{source.source_id}.jsonl", held)
-    _write(CACHE / "tune" / f"{source.source_id}.jsonl", tune)
+    for path, part in (
+        (CACHE / f"{source.source_id}.jsonl", held),
+        (CACHE / "tune" / f"{source.source_id}.jsonl", tune),
+    ):
+        if part:
+            _write(path, part)
+        else:
+            path.unlink(missing_ok=True)
     return rows
 
 

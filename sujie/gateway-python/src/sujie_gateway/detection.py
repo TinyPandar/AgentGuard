@@ -10,8 +10,9 @@ import unicodedata
 from urllib.parse import unquote
 
 from .contracts import DetectionFinding
+from .zh_rules import scan_zh
 
-DETECTOR_VERSION = "rules-v0.5"
+DETECTOR_VERSION = "rules-v0.6"
 MAX_SCAN_CHARS = 1_000_000
 OVERRIDE_PATTERNS = (
     re.compile(r"ignore\s+(?:all\s+)?(?:previous|prior)\s+instructions", re.I),
@@ -95,9 +96,6 @@ _EN_TARGET = (
     r"(?:instructions?|directions?|directives?|rules?|guidelines?|prompts?|commands?"
     r"|restrictions?|limitations?|constraints?|policies|programming|orders|guardrails?)"
 )
-_ZH_TARGET = (
-    r"(?:指令|指示|任务|任務|规则|規則|限制|策略|设定|設定|提示词|提示詞|规范|規範|约束|約束)"
-)
 V5_RULES = (
     (
         "CONTEXT_HIJACK",
@@ -140,18 +138,6 @@ V5_RULES = (
         ),
     ),
     (
-        "CONTEXT_HIJACK",
-        "untrusted_text_requests_instruction_override",
-        re.compile(
-            r"(?:忽略|无视|無視|忽视|忽視|不要理会|不要理會|忘记|忘記|跳过|跳過|绕过|繞過|取消|抛开|拋開)"
-            r"[^。\n]{0,12}"
-            + _ZH_TARGET
-            + r"|(?:关闭|關閉|禁用|停用|绕开|繞開)[^。\n]{0,10}(?:审批|審批|审计|審計|日志|日誌|人工确认|人工確認|安全)"
-            r"|你现在是[^。\n]{0,20}(?:不受|没有|無|无)[^。\n]{0,4}限制"
-            r"|你現在是[^。\n]{0,20}(?:不受|沒有|無)[^。\n]{0,4}限制"
-        ),
-    ),
-    (
         "TOOL_POISONING",
         "untrusted_text_directs_sensitive_exfiltration",
         re.compile(
@@ -165,17 +151,6 @@ V5_RULES = (
             r"|<\s*/?\s*(?:important|system|inst)\s*>|\[/?(?:system|inst)\]"
             r"|\bcurl\b[^\n|]{0,120}\|\s*(?:ba|z)?sh\b",
             re.I,
-        ),
-    ),
-    (
-        "TOOL_POISONING",
-        "untrusted_text_directs_sensitive_exfiltration",
-        re.compile(
-            r"(?:发送|發送|转发|轉發|附在|附带|附帶|上传|上傳|打包|外发|外發|提交)[^。\n]{0,40}"
-            r"(?:https?://|webhook|id_rsa|\.ssh|密钥|密鑰|私钥|私鑰|对话历史|對話歷史|api\s*key)"
-            r"|(?:请|請)[^。\n]{0,20}(?:执行|執行)\s*curl|(?:不告诉|不告訴|瞒着|瞞著)用户"
-            r"|(?:^|['‘“「:：])\s*(?:系统|系統)\s*[:：]",
-            re.I | re.M,
         ),
     ),
     (
@@ -195,15 +170,6 @@ V5_RULES = (
             r"|sensitive|restricted)\s+(?:\w+\s+)?(?:information|data|records)"
             r"|(?:anweisungen|ausführungen|alles)[^.\n]{0,30}(?:ignorieren|vergessen)"
             r"|zaboravi\s+sve",
-            re.I,
-        ),
-    ),
-    (
-        "TOOL_POISONING",
-        "untrusted_text_directs_agent_action",
-        re.compile(
-            r"(?:删除|刪除|清空|篡改)[^。\n]{0,15}(?:audit|审计|審計|日志|日誌|记录|記錄)"
-            r"|(?:改为|改為|设置为|設置為)?允许\s*root|(?:关掉|關掉|关闭|關閉)[^。\n]{0,8}(?:防火墙|防火牆|杀毒|殺毒)",
             re.I,
         ),
     ),
@@ -289,6 +255,9 @@ def _scan(view: str) -> tuple[str, str] | None:
         for family, reason, pattern in V5_RULES:
             if pattern.search(candidate):
                 return family, reason
+        zh = scan_zh(candidate)
+        if zh:
+            return zh
         fragment = _fragments(candidate)
         if fragment and any(
             pattern.search(fragment) for pattern in (*OVERRIDE_PATTERNS, *EXTRA_OVERRIDE_PATTERNS)

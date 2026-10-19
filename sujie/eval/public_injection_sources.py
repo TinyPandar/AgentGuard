@@ -26,9 +26,13 @@ class Source:
     attack_source: str
     rows: Callable[[str, bytes], Iterable[dict]]
     train_files: tuple[str, ...] = ()
+    # "hash": 50/50 split (or train_files); "tune"/"heldout": whole source in one role.
+    role: str = "hash"
+    url_template: str = HF
+    cap: int | None = None  # deterministic subsample for very large sources
 
     def url(self, path: str) -> str:
-        return HF.format(repo=self.repo, rev=self.revision, path=path)
+        return self.url_template.format(repo=self.repo, rev=self.revision, path=path)
 
 
 def _parquet(raw: bytes) -> list[dict]:
@@ -172,4 +176,138 @@ SOURCES = (
         train_files=("data/train-00000-of-00001.parquet",),
     ),
 )
+
+
+# Only Goal_Hijacking items are reliably injections; Safety-Prompts' Role_Play and
+# Prompt_Leaking items are mostly ordinary role-play or questions *about* prompts.
+SP_ATTACK_TYPES = {"Goal_Hijacking"}
+
+
+def _safety_prompts_attack(path: str, raw: bytes):
+    for kind, items in json.loads(raw).items():
+        if kind in SP_ATTACK_TYPES:
+            for i, row in enumerate(items):
+                yield {
+                    "text": row["prompt"],
+                    "attack": True,
+                    "lang": "zh",
+                    "family": kind,
+                    "upstream_id": f"{kind}:{i}",
+                }
+
+
+def _safety_prompts_responses(path: str, raw: bytes):
+    # Model replies: ordinary Chinese prose used only as a benign held-out corpus.
+    for kind, items in json.loads(raw).items():
+        for i, row in enumerate(items):
+            text = (row.get("response") or "").strip()
+            if text:
+                yield {
+                    "text": text,
+                    "attack": False,
+                    "lang": "zh",
+                    "family": "response:" + kind,
+                    "upstream_id": f"{kind}:{i}",
+                }
+
+
+def _alpaca_zh(path: str, raw: bytes):
+    for i, row in enumerate(json.loads(raw)):
+        text = "\n".join(x for x in (row.get("instruction"), row.get("input")) if x)
+        yield {"text": text, "attack": False, "lang": "zh", "upstream_id": str(i)}
+
+
+def _jailbench(path: str, raw: bytes):
+    import csv
+    import io
+
+    for row in csv.DictReader(io.StringIO(raw.decode("utf-8-sig"))):
+        yield {
+            "text": row["query"],
+            "attack": True,
+            "lang": "zh",
+            "family": row.get("一级领域", ""),
+            "upstream_id": row.get("", ""),
+        }
+
+
+GH_RAW = "https://raw.githubusercontent.com/{repo}/{rev}/{path}"
+ZH_SOURCES = (
+    Source(
+        "zh_safety_prompts_attack",
+        "thu-coai/Safety-Prompts",
+        "559ab9f24ce4621e3f839ef05e1075b6c4f125ee",
+        ("instruction_attack_scenarios.json",),
+        "Apache-2.0",
+        False,
+        "zh goal hijacking (TUNE only)",
+        "DIRECT",
+        _safety_prompts_attack,
+        role="tune",
+        cap=6000,
+    ),
+    Source(
+        "zh_alpaca_benign",
+        "shibing624/alpaca-zh",
+        "f39db019a94f8dbea48ab30d2bdc090703284559",
+        ("alpaca_gpt4_data_zh.json",),
+        "CC-BY-4.0",
+        False,
+        "zh benign user tasks (TUNE only)",
+        "DIRECT",
+        _alpaca_zh,
+        role="tune",
+        cap=6000,
+    ),
+    Source(
+        "zh_jailbench",
+        "STAIR-BUPT/JailBench",
+        "5f474072db5212602448c16558b6d449efbecd30",
+        ("JailBench.csv",),
+        "MIT",
+        False,
+        "zh jailbreak / role-play (HELD-OUT only, unseen source)",
+        "DIRECT",
+        _jailbench,
+        role="heldout",
+        url_template=GH_RAW,
+    ),
+    Source(
+        "zh_safety_prompts_benign",
+        "thu-coai/Safety-Prompts",
+        "559ab9f24ce4621e3f839ef05e1075b6c4f125ee",
+        ("typical_safety_scenarios.json",),
+        "Apache-2.0",
+        False,
+        "zh benign prose (model replies; HELD-OUT only)",
+        "DIRECT",
+        _safety_prompts_responses,
+        role="heldout",
+        cap=3000,
+    ),
+)
+
+
+def _local_cases(path: str, raw: bytes):
+    for row in json.loads(raw)["cases"]:
+        yield {"text": row["text"], "attack": row["attack"], "lang": "zh", "upstream_id": row["id"]}
+
+
+_LOCAL = "file://" + str(__import__("pathlib").Path(__file__).resolve().parent) + "/cases/{path}"
+ZH_SOURCES += (
+    Source(
+        "zh_agent_dev",
+        "local",
+        "repo",
+        ("zh_agent_dev_v1.json",),
+        "MIT",
+        False,
+        "zh agent injection + benign hard negatives, author-written (TUNE only)",
+        "INDIRECT",
+        _local_cases,
+        role="tune",
+        url_template=_LOCAL,
+    ),
+)
+SOURCES = SOURCES + ZH_SOURCES
 BY_ID = {s.source_id: s for s in SOURCES}
