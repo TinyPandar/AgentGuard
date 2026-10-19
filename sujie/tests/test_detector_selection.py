@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -24,7 +25,11 @@ def test_default_is_extended_and_frozen_is_selectable(monkeypatch):
 @pytest.mark.parametrize("name", ["frozen", "extended"])
 def test_gateway_binds_selected_detector(name):
     code = "import sujie_gateway.m1_runtime as m; print(m.DETECTOR_VERSION)"
-    env = {"SUJIE_DETECTOR": name, "PYTHONPATH": str(ROOT / "gateway-python/src")}
+    env = dict(os.environ)
+    env["SUJIE_DETECTOR"] = name
+    env["PYTHONPATH"] = str(ROOT / "gateway-python/src") + (
+        os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else ""
+    )
     out = subprocess.run(
         [sys.executable, "-c", code], env=env, capture_output=True, text=True, check=True
     ).stdout.strip()

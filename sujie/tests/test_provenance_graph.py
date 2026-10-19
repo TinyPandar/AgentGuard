@@ -372,7 +372,7 @@ def test_bundle_uses_optional_renderer_for_all_graphs(scenario, tmp_path, render
         assert [fmt for _, fmt in calls] == ["svg", "svg", "svg", "png"]
         assert "graph [dpi=144];" in calls[-1][0]
         assert (tmp_path / "attack_path_simple_zh.png").read_bytes() == b"rendered png"
-        assert "<svg>rendered</svg>" in (tmp_path / "report.html").read_text()
+        assert "<svg>rendered</svg>" in (tmp_path / "report.html").read_text(encoding="utf-8")
     else:
         assert not rendered_files & written
         assert len(calls) == (0 if rendering == "disabled" else 2)
