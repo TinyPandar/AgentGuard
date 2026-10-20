@@ -1,4 +1,4 @@
-# LaTeX 作品报告（M25 交付草稿）
+# LaTeX 作品报告（当前绑定快照 `1b64b1f`）
 
 正文入口为 `main.tex`，按官方五章拆分到 `sections/`；两张矢量图由 `figures/` 中的 TikZ 源码生成。后续报告修订以本工程为主，旧 Markdown 报告保留为 M21 材料快照，不自动覆盖。
 
@@ -12,18 +12,18 @@
 
 ## 当前验证状态
 
-内置编译请求未返回诊断；已通过 GitHub XeLaTeX 首轮构建（[Actions](https://github.com/jiapengLi11/AgentGuard/actions/runs/39139293592)），初版为18页、361735字节，已取得实际PDF做版式检查。随后修正目录孤页、拉丁字体选面和图中连线；最新产物以PR #15对应提交的Actions附件为准。旧Release保持M21快照身份。
+本机没有 XeLaTeX，全部构建走 GitHub Actions。当前基线版本的编译、页数、体积与 SHA-256 记录在上一级 `LATEX_DELIVERY_REVIEW.md`，产物为该次运行的 `sujie-m25-latex-review` 附件；本文件不重复这些数字，避免两处不一致。
 
 CI使用TeX Live 2025预置环境，latex-action固定提交，关闭shell escape，产出 `sujie-m25-latex-review` 附件。该环境使用FandolSong草稿替代，正式SimSun字体验收仍待完成。本机若捆绑Poppler缺少Adobe-GB1语言映射，不能以其漏画中文字判定PDF缺字；字体已嵌入，可用支持该映射的阅读器或MuPDF核查。
 
-源码检查（不代替编译）：在仓库根目录运行 `python3 competition/submission/tools/check_report_latex.py`。它检查输入文件、引用、环境配对、摘要长度、匿名占位和官方说明页；按 `runtime-version.json` 的完整提交ID与验证记录摘要，核对该历史Git快照中的281份源码，而非将最新工作区冒充已验收版本。克隆时需包含该提交的历史，CI使用 `fetch-depth: 0`。
+源码检查（不代替编译）：在仓库根目录运行 `python3 competition/submission/tools/check_report_latex.py`。它检查输入文件、引用、环境配对、摘要长度、匿名占位和官方说明页；按 `runtime-version.json` 的完整提交 ID 与验证记录摘要，核对该历史 Git 快照中的 312 份源码，而非将最新工作区冒充已验收版本。克隆时需包含该提交的历史，CI 使用 `fetch-depth: 0`。清单本身由 `tools/build_report_binding.py` 按固定规则从 git 对象重算，不手工维护。
 
 输出中的 `current_source_mismatches` 单列当前工作区与报告快照的差异；默认通过只表示报告引用的历史快照一致，不表示当前程序已验收。如要检查当前交付代码与报告完全一致，运行 `python3 competition/submission/tools/check_report_latex.py --require-current-source`，存在差异时会失败。更新报告基线时，应先完成对应代码验证，新增独立验证记录，再更新正文与绑定文件；旧记录不覆盖。
 
 ## 内容版本
 
-- 基于主线 `99cba60`，集成本地记录为1025项回归通过；本轮没有重跑该回归。
-- M25原冻结版本的48格脚本、48格本地HTTP和14格来源代表分别呈现，原始证据仍需独立移交。
-- M24六链为有限Linux运行性记录，不作为M25完整隔离或性能验收。
-- 聊天控制台及Windows修复在[PR #17](https://github.com/jiapengLi11/AgentGuard/pull/17)，替代旧PR #14；额外DeepSeek接入已撤除。新控制台的当前验证单独记录，不复用本报告基线的1025项成绩。
+- 绑定快照 `1b64b1f`，其运行时源码与 CI 验证过的 `96d591b` 逐字节一致；回归结论按 `96d591b` 的三平台运行引用（Ubuntu 1107、Windows 1106、macOS 1107）。
+- 规则检测离线评测：`rules-v0.3` 14 条冒烟、`rules-v0.6` 42 条合成矩阵与 140 条公开样本留出；三组数字并列呈现，合成矩阵的 100% 标注为同源自检。
+- M25 原冻结版本的 48 格脚本、48 格本地 HTTP 和 14 格来源代表作为历史阶段保留，源版本独立于当前基线。
+- M24 六链为有限 Linux 运行性记录，不作为完整隔离或性能验收。
 - 文献核对与写作辅助出处见上一级 `LATEX_DELIVERY_REVIEW.md`。
