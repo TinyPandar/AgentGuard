@@ -59,7 +59,9 @@ def scan_text(text: str) -> str:
     return "synthetic" if verdicts else "clean"
 
 # Raw evaluation runs are handed over as a separate desensitized packet.
-EXCLUDE_PATH_PARTS = {("sujie", "eval", "reports", "runs")}
+# The delivery snapshot under competition/submission/release/ duplicates artifacts
+# that are either in this repo already (source) or shipped separately (PDFs).
+EXCLUDE_PATH_PARTS = {("sujie", "eval", "reports", "runs"), ("competition", "submission", "release")}
 
 
 def sha256(path: Path) -> str:
