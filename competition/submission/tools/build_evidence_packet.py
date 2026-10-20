@@ -25,7 +25,13 @@ from pathlib import Path
 EXCLUDE_NAMES = {"model-budget.sqlite3", "model-budget.sqlite3-journal"}
 EXCLUDE_SUFFIXES = (".sqlite3", ".sqlite3-journal", ".key", ".pem", ".env")
 EXCLUDE_DIRS = {"__pycache__", ".git", ".venv", "node_modules", "model-cache"}
-PATH_RE = re.compile(r"(/Users/[^\"\\s]+|/home/[^\"\\s]+|/private/var/[^\"\\s]+|[A-Za-z]:\\\\[^\"\\s]+)")
+PATH_RE = re.compile(
+    r'(/Users/[^"\s]+'
+    r'|(?<![A-Za-z0-9])/home/[^"\s]+'
+    r'|/private/var/[^"\s]+'
+    r'|/var/folders/[^"\s]+'
+    r'|[A-Za-z]:\\\\[^"\s]+)'
+)
 
 
 def sha256(path: Path) -> str:
@@ -108,11 +114,17 @@ def main() -> int:
             "",
             "```sh",
             "cd sujie",
+            "# 1) 四业务确定性运行（现场生成新目录）并核验",
             ".venv/bin/python eval/run_business_validation.py \\",
             "  --protocol-file eval/protocols/four_business_workflows_v2.json \\",
             "  --out-dir eval/reports/runs/<新目录>",
             ".venv/bin/python eval/verify_runtime_validation.py eval/reports/runs/<新目录>",
+            "# 2) 离线检测评测（规则初筛，非 Agent ASR）",
             ".venv/bin/python dev.py eval-detection",
+            ".venv/bin/python dev.py eval-bypass",
+            ".venv/bin/python eval/run_public_injection.py",
+            "# 3) 溯源图演示（离线）",
+            ".venv/bin/python eval/provenance_demo.py --out <新目录>",
             "```",
             "",
             "## 目录",
@@ -121,6 +133,7 @@ def main() -> int:
             "- `runs/<dir>/*-report.txt`：各用例业务报告。",
             "- `runs/<dir>/*-export.json`：各用例运行导出（来源与工具轨迹）。",
             "- `runs/<dir>/runtime-sources.json`：运行时源码快照索引。",
+            "- `runs/validation/*.json`：项目验证记录（M25/M26 本地验收、主线能力审计）。",
             "- `logs/`：控制台复现日志。",
             "",
         ]
