@@ -1,6 +1,6 @@
 \chapter{作品设计与实现}
 \section{总体架构与信任边界}
-当前主线由Python可信Host/网关、真实stdio MCP工具、Python控制面和Vue控制台组成。控制台负责创建任务、查看来源和审批；Host维护当前任务和模型循环；网关在实际工具调用之前核验合同、权限、来源和效果，执行器产生可观察的文件、网络、Git或记忆状态。图\ref{fig:architecture}给出实际组件关系。
+当前主线由Python可信Host/网关、真实stdio MCP工具、Python控制面和Vue控制台组成。控制台负责创建任务、查看来源和审批；Host维护当前任务和模型循环；网关在实际工具调用之前核验合同、权限、来源和效果，执行器产生可观察的文件、网络、Git或记忆状态。图\ref{fig:architecture}给出实际组件关系。下文统一用“宿主”指运行任务与模型循环的可信进程，用“网关”指其中负责工具授权与执行前核验的组件，二者是包含关系而非同义词。
 
 \input{figures/architecture.tex}
 
