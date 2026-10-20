@@ -9,7 +9,7 @@
 \section{相关工作与作品切入点}
 已有研究形成了几条互补路线。CaMeL通过能力和信息流约束区分控制流与不可信数据\cite{camel}；Task Shield核验指令和工具调用是否服务用户目标\cite{taskshield}；AgentSpec以领域策略描述并执行运行约束\cite{agentspec}。AuthGraph比较授权与实际来源关系\cite{authgraph}，AgentVisor研究语义权限分离与违规后的反馈\cite{agentvisor}，ContainmentBench和AID-Guard分别关注暴露后的遏制评估和委派效果的状态化授权\cite{containment,aidguard}。MCP-SafetyBench与MCPTox提供MCP安全和工具投毒的基准研究\cite{mcpsafety,mcptox}。
 
-溯界的切入点是将任务授权、来源用途和实际效果收据放入同一执行链，支持危险资料研判、跨角色委派和跨会话记忆。表\ref{tab:position}说明本作品使用已有思路时增加的具体工程对象和验收方式。相关机制的组合价值由后文逐项给出证据，比较实验范围见第三章。
+溯界的切入点是将任务授权、来源用途和实际效果收据放入同一执行链，支持危险资料研判、跨角色委派和跨会话记忆。表\ref{tab:position}说明本作品使用已有思路时增加的具体工程对象和验收方式，机制维度的横向对照见表\ref{tab:compare}。相关机制的组合价值由后文逐项给出证据，比较实验范围见第三章。
 
 \begin{table}[htbp]\centering
 \caption{作品切入点与验收对象}\label{tab:position}
