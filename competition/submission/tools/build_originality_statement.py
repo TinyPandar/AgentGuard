@@ -130,8 +130,9 @@ def build_pdf(md: dict[str, object], signatures: list[Path], out: Path, date: st
     flow.append(Paragraph(str(md["label"]), label))
 
     cells = []
+    cap_w = CONTENT_W / max(len(signatures), 1) - 16
     for sig in signatures:
-        buf, w, h = prepare_signature(sig, max_h_pt=48, max_w_pt=CONTENT_W / 3.4)
+        buf, w, h = prepare_signature(sig, max_h_pt=48, max_w_pt=cap_w)
         cells.append(Image(buf, width=w, height=h, hAlign="CENTER"))
     if cells:
         tbl = Table([cells], colWidths=[CONTENT_W / max(len(cells), 1)] * len(cells))
@@ -208,10 +209,12 @@ def build_docx(md: dict[str, object], signatures: list[Path], out: Path, date: s
     if signatures:
         row = doc.add_table(rows=1, cols=len(signatures))
         row.autofit = True
+        cap_w = CONTENT_W / max(len(signatures), 1) - 16
+        col_cm = 14.66 / max(len(signatures), 1)
         for idx, sig in enumerate(signatures):
-            buf, _, _ = prepare_signature(sig, max_h_pt=48, max_w_pt=CONTENT_W / 3.4)
+            buf, _, _ = prepare_signature(sig, max_h_pt=48, max_w_pt=cap_w)
             cell = row.cell(0, idx)
-            cell.width = Cm(4.6)
+            cell.width = Cm(col_cm)
             cell_par = cell.paragraphs[0]
             cell_par.alignment = WD_ALIGN_PARAGRAPH.CENTER
             cell_par.add_run().add_picture(io.BytesIO(buf.getvalue()), height=Cm(1.7))
