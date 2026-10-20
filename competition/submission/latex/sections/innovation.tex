@@ -19,4 +19,22 @@
 审批预览与确切输入、版本、目的地和资源状态关联，批准后还要执行提交复核。IOC和Git业务将批准与实际提交分为独立步骤，漂移、拒绝、重放和UNKNOWN分别留痕。这一组合便于操作者判断“批准了什么”和“实际发生了什么”，也给审计提供明确对象。
 
 \section{与已有机制的关系}
+表\ref{tab:compare}按机制维度给出横向对照。表中“覆盖”指该机制把这一项作为设计目标并在公开描述中实现，不代表本文复现过其代码，也不代表防护强度；“未涉及”指其公开描述中没有这一层，不构成对其效果的否定。
+
+\begin{table}[htbp]\centering
+\small
+\caption{与近邻机制的能力对照（按各文公开描述归类，未复现其实现）}\label{tab:compare}
+\begin{tabularx}{\textwidth}{P{0.21\textwidth}*{5}{>{\centering\arraybackslash}X}}\toprule
+机制 & 执行前动作授权 & 不可信来源约束 & 检测与授权分离 & 敏感目标硬拒绝 & 违规链路溯源\\\midrule
+CaMeL\cite{camel} & 覆盖 & 覆盖 & 未涉及 & 未涉及 & 未涉及\\
+Task Shield\cite{taskshield} & 部分 & 部分 & 未涉及 & 未涉及 & 未涉及\\
+AgentSpec\cite{agentspec} & 覆盖 & 未涉及 & 未涉及 & 部分 & 未涉及\\
+AuthGraph\cite{authgraph} & 覆盖 & 覆盖 & 未涉及 & 未涉及 & 覆盖\\
+AgentVisor\cite{agentvisor} & 覆盖 & 部分 & 未涉及 & 未涉及 & 部分\\
+本作品 & 覆盖 & 覆盖 & 覆盖 & 覆盖 & 覆盖\\\bottomrule
+\end{tabularx}
+\end{table}
+
+ContainmentBench与AID-Guard属于暴露后遏制与委派授权的评测与机制研究\cite{containment,aidguard}，MCP-SafetyBench与MCPTox提供基准与攻击面刻画\cite{mcpsafety,mcptox}，它们与上表的机制维度互补，不直接填入同一栏。
+
 上述贡献建立在能力授权、来源跟踪、运行时策略和任务对齐研究之上。作品的当前增量集中在统一执行对象、跨角色/会话的实现、检测器与授权的职责分离，以及可检查实际效果的工程组合。其相对基线的广泛收益仍以预登记真实模型比较为下一阶段验证对象。
