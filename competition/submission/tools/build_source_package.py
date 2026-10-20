@@ -31,7 +31,32 @@ EXCLUDE_SUFFIXES = (
     ".DS_Store",
 )
 EXCLUDE_NAME_RE = re.compile(r"(credential|secret|api[_-]?key|honeytoken)", re.I)
-CRED_LINE_RE = re.compile(r"(sk-[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{12,}|-----BEGIN [A-Z ]*PRIVATE KEY-----)")
+TOKEN_RE = re.compile(r"(sk-[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{12,})")
+PEM_RE = re.compile(r"-----BEGIN ([A-Z ]*PRIVATE KEY)-----\s*(.*?)\s*-----END \1-----", re.S)
+# Fixtures that announce themselves as non-functional key material (e.g. tests proving
+# masking) are reported separately so real credentials are not buried in noise.
+SYNTHETIC_MARKER_RE = re.compile(
+    r"(synthetic|non-?functional|do-?not-?use|demo[- _]?key|fixture|placeholder|假密钥|测试用)",
+    re.I,
+)
+
+
+def scan_text(text: str) -> str:
+    """Classify one file body: 'real' credential, 'synthetic' fixture, or 'clean'."""
+    if TOKEN_RE.search(text):
+        return "real"
+    verdicts: list[str] = []
+    for match in PEM_RE.finditer(text):
+        body = re.sub(r"[^A-Za-z0-9+/=]", "", match.group(2))
+        window = text[max(0, match.start() - 800) : match.end() + 800]
+        # Real private keys carry far more than 64 base64 chars; short bodies are placeholders.
+        if len(body) < 64 or SYNTHETIC_MARKER_RE.search(window):
+            verdicts.append("synthetic")
+        else:
+            verdicts.append("real")
+    if "real" in verdicts:
+        return "real"
+    return "synthetic" if verdicts else "clean"
 
 # Raw evaluation runs are handed over as a separate desensitized packet.
 EXCLUDE_PATH_PARTS = {("sujie", "eval", "reports", "runs")}
@@ -85,12 +110,16 @@ def main() -> int:
             files.append((path, name))
 
     suspects: list[str] = []
+    synthetic: list[str] = []
     for path, arc in files:
         if path.stat().st_size > 4 << 20:
             continue
         text = path.read_text("utf-8", errors="ignore")
-        if CRED_LINE_RE.search(text):
+        verdict = scan_text(text)
+        if verdict == "real":
             suspects.append(arc)
+        elif verdict == "synthetic":
+            synthetic.append(arc)
 
     manifest = []
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -115,12 +144,16 @@ def main() -> int:
         ))
 
     print(f"OK -> {out} ({out.stat().st_size} bytes, {len(files)} files)")
+    if synthetic:
+        print(f"note: {len(synthetic)} file(s) carry self-labelled synthetic key fixtures:")
+        for s in synthetic:
+            print("  " + s)
     if suspects:
-        print("WARNING: credential-like strings found:")
+        print("WARNING: credential-like strings found (no synthetic marker):")
         for s in suspects:
             print("  " + s)
-    else:
-        print("credential scan: clean")
+        return 1
+    print("credential scan: clean")
     return 0
 
 
