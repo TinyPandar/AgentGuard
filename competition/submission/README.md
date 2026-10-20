@@ -43,6 +43,10 @@
 
 - `交付总表-2026-10-20.md`：**当前唯一上传口径**（基线 `96d591b`，槽位/数字/阻塞/重建命令）。
 - `作品报告-溯界.md`：作品报告草稿（含元信息块，正式 PDF 中删除）。**已被 `latex/` 取代**。
+- `latex/`：**正式作品报告的 LaTeX 工程**（五章 + 摘要 + 参考文献 + 填写说明页）。绑定快照见 `latex/runtime-version.json`；由 CI 编译，产物为 `sujie-m25-latex-review` 附件。
+- `LATEX_DELIVERY_REVIEW.md`：报告与交付资料的**权威状态与待验收清单**。
+- `tools/check_report_latex.py`：报告源码检查器（引用提交、验证记录哈希、清单一致性、摘要字数、匿名）。
+- `tools/build_report_binding.py`：按一条固定规则从 git 对象重算源码清单，生成报告绑定记录（拒绝覆盖已有文件）。
 - `部署说明-溯界.md`：部署与复现说明（含已知限制与未验收项）。
 - `测试样例与流程说明-溯界.md`：测试样例、Oracle、基线与复现流程。
 - `tools/build_report_docx.py`：Markdown→DOCX 转换脚本，套用官方格式（A4、宋体小四、1.5 倍行距）。构建产物输出到 `dist/`（已忽略）。
