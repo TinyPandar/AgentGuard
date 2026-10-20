@@ -1,6 +1,6 @@
 {
   "schema": "sujie-report-source-binding-v1",
-  "source_commit": "99cba601111f82e7fdf9c43de060684cc5ec1282",
-  "validation_record": "docs/validation/MAIN_SYNC_VALIDATION_2026-10-18.json",
-  "validation_record_sha256": "063ad5a45df75223a21c3cae2220d6f95397211792015c55329817398cd2ec89"
+  "source_commit": "1b64b1fdfbbd108decdede7383adc5cfb297626d",
+  "validation_record": "docs/validation/MAIN_SYNC_VALIDATION_2026-10-20.json",
+  "validation_record_sha256": "62aea52364bf5f7858c3e18f7068181a6e1a0077048e504416b18ce8237eb73a"
 }
