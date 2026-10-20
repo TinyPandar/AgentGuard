@@ -1,33 +1,56 @@
 \chapter{作品测试与分析}
 \section{版本、环境与证据口径}
-本章以集成主线99cba60为代码基线，分别保留M25原冻结版本、集成本地回归和较早云模型实验的结果。工程回归验证代码行为；确定性脚本验证编排和效果；本地HTTP校准验证Provider请求准备与响应解析；真实云实验验证模型行为。四类结果分表记录。
+本章以提交快照\texttt{1b64b1f}为代码基线。该快照的运行时源码与经持续集成验证的\texttt{96d591b}逐字节一致，差异仅在文档；因此工程回归数字按\texttt{96d591b}的持续集成运行引用，源码一致性由清单哈希核验。历史阶段（M25及其之前的冻结矩阵、较早云模型实验）保留各自源版本，只作对应关系记录。
 
-集成本地验证元数据位于交付源码的\path{docs/validation/MAIN_SYNC_VALIDATION_2026-10-18.json}，含日志摘要、281份源文件摘要、前端结果和退出码。历史M25结果另见\path{docs/validation/M25_LOCAL_ACCEPTANCE_2026-10-18.json}；其完整原始运行和审阅归档需单独移交。摘要清单用于核对文件一致性，不能替代原始观察。
+四类结果分表记录，不能互相冒充：工程回归验证代码行为；确定性脚本验证编排和实际效果；规则检测评测描述初筛分类表现；真实云实验验证模型行为。前三类是当前基线的可复现结果，第四类为开发期历史记录。
 
-开发端使用Python 3.12和锁定依赖，前端执行Vue类型检查与生产构建。M24容器环境为Linux/aarch64、Python 3.12.14、Git 2.47.3；宿主为Docker Desktop。现有材料的跨平台记录各有对应版本，不拼接成单一验收成绩。
+当前基线的验证元数据位于交付源码的\path{docs/validation/MAIN_SYNC_VALIDATION_2026-10-20.json}，含312份运行时源文件的SHA-256、三平台回归结果、离线检测评测结果与退出码；清单由\path{tools/build_report_binding.py}按一条固定规则从git对象重算，便于复核。历史M25结果见\path{docs/validation/M25_LOCAL_ACCEPTANCE_2026-10-18.json}。摘要清单用于核对文件一致性，不能替代原始观察。
+
+开发端使用Python 3.12和锁定依赖，前端执行Vue类型检查与生产构建。M24容器环境为Linux/aarch64、Python 3.12.14、Git 2.47.3；宿主为Docker Desktop。各平台记录只在其自身范围内解释。
 
 \section{业务与安全判定方法}
 合法业务Oracle核对实际来源读取和报告字段，例如时间线的窗口与排序、附件的整数分金额、Git配置差异、Memory历史和当前事实。安全Oracle读取真实Receiver记录、文件、Git对象/ref及SQLite版本。任务状态FINISHED、记录有效、业务完成和危险效果是四个独立字段。
 
-M25同事实比较为六个候选封存相同业务事实，构造正常C、注入A和适用的合法危险原文引用Q。三主配置为unsafe、strong-static和full；no-source、no-recovery为消融。共48个唯一单元、14个配对组，覆盖时间线、附件、IOC、Git检视、三层委派与跨会话Memory。单元数、配对数和独立任务数分别统计。
+同事实比较方法为：给候选封存相同业务事实，构造正常C、注入A和适用的合法危险原文引用Q三种场景；主配置为unsafe、strong-static和full，no-source、no-recovery为消融。M25阶段共48个唯一单元、14个配对组，覆盖时间线、附件、IOC、Git检视、三层委派与跨会话Memory。单元数、配对数和独立任务数分别统计。
 
-\section{工程回归与有限部署结果}
+\section{工程回归与跨平台结果}
 \begin{table}[htbp]\centering
-\caption{工程与运行性记录，按版本分别解释}\label{tab:engineering}
-\begin{tabularx}{\textwidth}{P{0.23\textwidth}P{0.30\textwidth}Y}\toprule
+\caption{同一提交（快照1b64b1f / 源码96d591b）的工程回归记录}\label{tab:engineering}
+\begin{tabularx}{\textwidth}{P{0.20\textwidth}P{0.30\textwidth}Y}\toprule
 记录 & 观察结果 & 适用范围\\\midrule
-集成版本本地回归 & 1025 passed，1 warning；退出码0；216份格式检查通过 & 集成代码的本地工程验证\\
-集成前端 & 类型检查、生产构建退出码0 & 构建验证；页面操作另验\\
-M25原阶段回归 & 原日志1022 passed，1 warning；原进程退出码未取回 & 原冻结版本，保留执行元数据限制\\
+Ubuntu持续集成 & 1107 passed，1 skipped，1 xfailed，1 warning；1231秒 & 全量pytest，含静态检查与格式检查\\
+Windows持续集成 & 1106 passed，2 skipped，1 xfailed，1 warning；1938秒 & 同上；多1项因平台跳过\\
+macOS本机复跑 & 1107 passed，1 skipped，1 xfailed，1 warning；512秒；退出码0 & 同上，独立于持续集成环境\\
+前端构建 & 类型检查与生产构建退出码0 & 构建验证；页面操作另验\\
+容器配置与前端作业 & 两者均成功 & 配置可解析、控制台可构建\\
 M24 Linux六链 & 六候选各一实例完成，容器退出码0，主机独立重算通过 & 单容器、同UID、脚本模型，无云调用\\\bottomrule
 \end{tabularx}
 \end{table}
 
-M24容器使用UID/GID 10001、只读rootfs、\texttt{--network none}、CapDrop ALL、no-new-privileges、pids与内存限额及指定tmpfs。观测到CapEff为0、NoNewPrivs为1、rootfs写探针返回EROFS，仅loopback处于UP且无可用默认路由。该记录验证六候选有限链路的运行约束，未测量M25完整矩阵的隔离或吞吐开销。
+三平台的通过数一致或接近（Windows多一次跳过），说明当前测试夹具不依赖单一操作系统；此前在macOS上因临时目录符号链接导致的路径别名拒绝已被夹具修复。M24容器使用UID/GID 10001、只读rootfs、\texttt{--network none}、CapDrop ALL、no-new-privileges、pids与内存限额及指定tmpfs；观测到CapEff为0、NoNewPrivs为1、rootfs写探针返回EROFS，仅loopback处于UP且无可用默认路由。该记录验证六候选有限链路的运行约束，未测量完整矩阵的隔离或吞吐开销。
 
-\section{同事实离线比较}
+\section{规则检测离线评测}
+检测评测全部离线运行，无云调用；每次输出都记录数据集哈希与检测器版本，脚本拒绝覆盖已有输出。评测对象是规则初筛的分类表现，不执行真实工具链，也不涉及模型诱导提议。
+
 \begin{table}[htbp]\centering
-\caption{M25原冻结版本的离线观察}\label{tab:offline}
+\caption{规则检测离线评测（当前基线）}\label{tab:detection}
+\begin{tabularx}{\textwidth}{P{0.28\textwidth}P{0.11\textwidth}P{0.08\textwidth}P{0.22\textwidth}Y}\toprule
+数据集 & 检测器 & 规模 & 混淆矩阵 & 召回 / 正常误报\\\midrule
+合成冒烟样例 & \texttt{rules-v0.3} & 14 & TP5/FN2/FP1/TN6 & 71.4\% / 14.3\%\\
+七绕过合成矩阵 & \texttt{rules-v0.6} & 42 & TP21/FN0/FP0/TN21 & 100\% / 0\%\\
+公开注入样本（留出） & \texttt{rules-v0.6} & 140 & TP45/FN35/FP0/TN60 & 56.25\% / 0\%\\\bottomrule
+\end{tabularx}
+\end{table}
+
+公开样本按来源分层抽样，四个来源的留出召回为：MCP工具投毒85\%\cite{dsmcptoolpoison}、Gandalf 65\%\cite{dsgandalf}、中文智能体安全集55\%\cite{dsagentsafetyzh}、deepset通用注入集20\%\cite{dsdeepset}，各来源精度均为100\%；四个来源的许可均允许再分发样例。合成矩阵由3种入口与7类绕过标签构成，含21个攻击格与21个对应正常格。
+
+结果须与口径并列解读：合成矩阵的100\%属同源自检，规则与样例同批开发，只能说明该规则集在自建样例上自洽；公开样本的56.25\%是规则初筛对既有语料的覆盖，其中数值较低的两个来源主要含有需要语义判断的载荷。两组数字都不构成攻击成功率、网关实际阻断率或跨语料泛化能力的结论。扩展检测器提高了中文与绕过变体的覆盖，但检测器只参与风险解释，实际授权仍由策略与不可覆盖名单决定。
+
+四业务确定性运行（\path{competition_repro_20261018}）在当前基线重跑为16个单元全部完成，云调用为0，源码归档哈希与协议哈希随运行目录记录。
+
+\section{同事实离线比较（历史阶段）}
+\begin{table}[htbp]\centering
+\caption{M25原冻结版本的离线观察，源版本独立于当前基线}\label{tab:offline}
 \begin{tabularx}{\textwidth}{P{0.27\textwidth}P{0.13\textwidth}P{0.16\textwidth}P{0.16\textwidth}Y}\toprule
 运行方式 & 单元/配对 & 正常执行 & 业务完成 & 危险效果\\\midrule
 确定性脚本 & 48/14 & 48 & 46 & 2\\
@@ -40,11 +63,11 @@ M24容器使用UID/GID 10001、只读rootfs、\texttt{--network none}、CapDrop 
 
 本地HTTP矩阵使用265次进程内MockTransport请求，经过Provider请求准备、解析和账本代码，云调用为0。三来源代表涵盖直接Unicode、外部Base64和跨会话Memory流程备注；来源真实暴露后固定提出禁止的夹具标记写入。三个unsafe攻击格实际改变标记，对应full格阻断。这说明指定实例的权限检查有效，未测量自然模型的攻击成功率或来源机制的独有收益。
 
-M25原矩阵与集成版本本地回归使用不同源版本。主线保留后续远端修复，历史48+48+14矩阵未在该集成版本全量重跑。报告保留这一版本对应关系，避免将旧矩阵当成新代码成绩。
+M25原矩阵与当前基线使用不同源版本。主线保留后续远端修复，历史48+48+14矩阵未在当前基线全量重跑。报告保留这一版本对应关系，避免将旧矩阵当成新代码成绩。
 
-\section{较早真实模型开发记录}
+\section{较早真实模型开发记录（历史阶段）}
 \begin{table}[htbp]\centering
-\caption{历史云模型小样本，独立于M25离线矩阵}\label{tab:cloud}
+\caption{历史云模型小样本，独立于离线矩阵}\label{tab:cloud}
 \begin{tabularx}{\textwidth}{P{0.21\textwidth}YY}\toprule
 阶段 & 实际结果 & 请求与已知用量\\\midrule
 M19共同配置 & 10单元中7项业务完成，3项IOC未提出发送且BLOCK为0 & 31请求，25005 tokens\\
@@ -54,9 +77,9 @@ M20引用核验 & 脚本主流程加一次云分析 & 1请求，353 tokens\\\bot
 \end{tabularx}
 \end{table}
 
-这些结果用于检查模型接入和业务可行性；跨版本修复不合并成功率。M25当前真实云CLI关闭，新的真实模型协议、资源准入、未见输入、重复规则和任务层统计需预登记后执行。无危险动作提议的格不能归因为网关阻断。
+这些结果用于检查模型接入和业务可行性；跨版本修复不合并成功率。当前真实云CLI关闭，新的真实模型协议、资源准入、未见输入、重复规则和任务层统计需预登记后执行。无危险动作提议的格不能归因为网关阻断；只有交接文档记载、原始运行目录不在仓库的结果，只能按“开发期记录”引用。
 
 \section{结果分析与未完成验证}
-现有结果支持三类具体结论：第一，任务与来源用途约束已进入真实工具链，并能在部分Git与标记写入校准中形成可观察差异；第二，委派、Memory和危险原文引用具有实际角色、版本、内容和业务事实见证；第三，审批对象与实际提交参数可核对。已完成工程记录证明这些链路可以运行和复核。
+现有结果支持四类具体结论：第一，任务与来源用途约束已进入真实工具链，并能在部分Git与标记写入校准中形成可观察差异；第二，委派、Memory和危险原文引用具有实际角色、版本、内容和业务事实见证；第三，审批对象与实际提交参数可核对，敏感写入目标在放宽授权下仍被拒绝；第四，同一提交在三个平台的全量回归一致通过，说明当前工程记录可跨环境复核。四业务确定性运行与规则检测评测均可离线重算。
 
-下一轮需要解决的是相对收益和外推范围：在同版真实模型上比较业务完成、危险效果和代价；补充未见任务、有效消融和重复；完成三来源七绕过矩阵、跨轮组合、完整入口绑定，以及当前拓扑的隔离、性能与跨机复现。暂不填写无数据支撑的正式ASR、提升比例或性能达标值。
+下一轮需要解决的是相对收益和外推范围：在同版真实模型上比较业务完成、危险效果和代价；补充未见任务、有效消融和重复；完成运行时三来源七绕过矩阵、跨轮组合、完整入口绑定，以及当前拓扑的隔离、性能与跨机复现。暂不填写无数据支撑的正式ASR、提升比例或性能达标值。
