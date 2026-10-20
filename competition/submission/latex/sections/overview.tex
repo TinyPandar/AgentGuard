@@ -31,7 +31,7 @@
 
 \begin{table}[htbp]\centering
 \caption{赛题列明规则与实现状态}\label{tab:rules}
-\begin{tabularx}{\textwidth}{P{0.235\textwidth}P{0.105\textwidth}Y}\toprule
+\begin{tabularx}{\textwidth}{P{0.215\textwidth}P{0.135\textwidth}Y}\toprule
 赛题列明规则 & 状态 & 实现对象与证据位置\\\midrule
 \texttt{fs.write} 写凭据、Shell启动文件、定时任务、VCS钩子与IDE设置 & 已完成 & 不可覆盖敏感名单，放宽Grant下仍拒绝（\ref{sec:sensitive}节，真实stdio MCP测试）\\
 \texttt{net.fetch} 外发会话内已读secret & 已完成 & 来源用途信封与目的地判定，封闭Receiver给出实际接收记录（\ref{sec:effect}节）\\
