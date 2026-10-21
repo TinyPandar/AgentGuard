@@ -9,7 +9,7 @@
 \section{相关工作与作品切入点}
 已有研究形成了几条互补路线。CaMeL（Capabilities for Machine Learning）通过能力和信息流约束区分控制流与不可信数据\cite{camel}；Task Shield核验指令和工具调用是否服务用户目标\cite{taskshield}；AgentSpec以领域策略描述并执行运行约束\cite{agentspec}。AuthGraph比较授权与实际来源关系\cite{authgraph}，AgentVisor研究语义权限分离与违规后的反馈\cite{agentvisor}，ContainmentBench和AID-Guard分别关注暴露后的遏制评估和委派效果的状态化授权\cite{containment,aidguard}。MCP-SafetyBench与MCPTox提供MCP安全和工具投毒的基准研究\cite{mcpsafety,mcptox}。
 
-溯界的切入点是将任务授权、来源用途和实际效果收据放入同一执行链，支持危险资料研判、跨角色委派和跨会话记忆。表\ref{tab:position}说明本作品使用已有思路时增加的具体工程对象和验收方式，机制维度的横向对照见表\ref{tab:compare}。相关机制的组合价值由后文逐项给出证据，比较实验范围见第三章。
+溯界的切入点是将任务授权、来源用途和实际效果收据放入同一执行链，支持危险资料研判、跨角色委派和跨会话记忆。表\ref{tab:position}说明本作品使用已有思路时增加的具体工程对象和验收方式，机制维度的横向对照见表\ref{tab:compare}。表中CAS（Compare-and-Swap，比较并交换）指记忆按版本号原子追加、避免并发覆盖的更新方式。相关机制的组合价值由后文逐项给出证据，比较实验范围见第三章。
 
 \begin{table}[htbp]\centering
 \caption{作品切入点与验收对象}\label{tab:position}
@@ -27,7 +27,7 @@
 
 面向大型企事业单位，系统可作为智能体平台接入真实工具前的授权与审计组件：把一次操作关联到任务目标、输入来源、批准对象和实际结果。当前验证使用合成资料、封闭接收端和本地Git远端，便于在不触及真实业务资产的情况下演示和复核。
 
-表\ref{tab:rules}按赛题列明的规则逐条给出实现状态与证据位置。状态栏只用“已完成”和“部分完成”两种取值：前者指该规则有真实工具链上的可复现测试，后者指机制已实现但验收范围仍有限，具体边界见第三章。
+表\ref{tab:rules}按赛题列明的规则逐条给出实现状态与证据位置。状态栏只用“已完成”和“部分完成”两种取值：前者指该规则有真实工具链上的可复现测试，后者指机制已实现但验收范围仍有限，具体边界见第三章。表中VCS（Version Control System）钩子指版本控制系统在提交、推送等操作时自动执行的脚本，IDE（Integrated Development Environment）设置指集成开发环境及其智能体插件的配置文件；stdio（Standard Input/Output）指MCP工具经标准输入输出通信的传输方式；DSL（Domain-Specific Language）指用于描述放行、审批与阻断规则的领域特定语言。
 
 \begin{table}[htbp]\centering
 \caption{赛题列明规则与实现状态}\label{tab:rules}
