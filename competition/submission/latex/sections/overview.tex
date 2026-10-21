@@ -16,7 +16,7 @@
 \begin{tabularx}{\textwidth}{P{0.24\textwidth}YY}\toprule
 问题 & 工程对象 & 验收对象\\\midrule
 资料影响工具授权 & 任务契约、Grant、来源用途信封 & 相同资料下的允许/拒绝动作与真实效果\\
-委派和记忆传播 & 子权限、来源父链、版本原文与CAS（Compare-and-Swap） & 实际主体/会话、原历史、版本与回执\\
+委派和记忆传播 & 子权限、来源父链、版本原文与CAS & 实际主体/会话、原历史、版本与回执\\
 审批后动作漂移 & 参数和版本绑定、执行前复核 & 指定commit/ref或载荷、确认与实际提交\\
 安全与业务判定 & 独立业务与副作用Oracle & 实际报告事实、读取记录、Receiver与Git状态\\\bottomrule
 \end{tabularx}
@@ -33,12 +33,12 @@
 \caption{赛题列明规则与实现状态}\label{tab:rules}
 \begin{tabularx}{\textwidth}{P{0.215\textwidth}P{0.135\textwidth}Y}\toprule
 赛题列明规则 & 状态 & 实现对象与证据位置\\\midrule
-\texttt{fs.write} 写凭据、Shell启动文件、定时任务、VCS（Version Control System）钩子与IDE（Integrated Development Environment）设置 & 已完成 & 不可覆盖敏感名单，放宽Grant下仍拒绝（\ref{sec:sensitive}节，真实stdio（Standard Input/Output） MCP测试）\\
+\texttt{fs.write} 写凭据、Shell启动文件、定时任务、VCS钩子与IDE设置 & 已完成 & 不可覆盖敏感名单，放宽Grant下仍拒绝（\ref{sec:sensitive}节，真实stdio MCP测试）\\
 \texttt{net.fetch} 外发会话内已读secret & 已完成 & 来源用途信封与目的地判定，封闭Receiver给出实际接收记录（\ref{sec:effect}节）\\
 \texttt{exec} 执行\texttt{base64}解码或管道下载脚本 & 已完成 & 注册程序以程序身份、确切argv和摘要核验，非任意Shell（\ref{sec:effect}节）\\
 代码检视期间\texttt{git.push} & 已完成 & 检视保持远端ref不变；发布绑定确切commit/remote/ref并需审批（\ref{sec:approval}节）\\
 子Agent违规传递secret & 已完成 & 子Grant收窄资源/操作/预算，父Host接收保留来源的结果（\ref{sec:delegation}节）\\
-放行/审批/阻断三态 & 已完成 & 策略DSL（Domain-Specific Language）输出ALLOW/ASK/BLOCK，硬拒绝优先（\ref{sec:effect}节）\\
+放行/审批/阻断三态 & 已完成 & 策略DSL输出ALLOW/ASK/BLOCK，硬拒绝优先（\ref{sec:effect}节）\\
 运行时风险等级 & 部分完成 & 决策记录含由实际决策反推的风险字段；尚无独立校准的风险分级器\\\bottomrule
 \end{tabularx}
 \end{table}
