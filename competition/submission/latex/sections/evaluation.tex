@@ -4,7 +4,7 @@
 
 四类结果分表记录，不能互相冒充：工程回归验证代码行为；确定性脚本验证编排和实际效果；规则检测评测描述初筛分类表现；真实云实验验证模型行为。前三类是当前基线的可复现结果，第四类为开发期历史记录。
 
-当前基线的验证元数据位于交付源码的\path{docs/validation/MAIN_SYNC_VALIDATION_2026-10-20.json}，含312份运行时源文件的SHA-256、三平台回归结果、离线检测评测结果与退出码；清单由\path{tools/build_report_binding.py}按一条固定规则从git对象重算，便于复核。历史M25结果见\path{docs/validation/M25_LOCAL_ACCEPTANCE_2026-10-18.json}。摘要清单用于核对文件一致性，不能替代原始观察。
+当前基线的验证元数据位于交付源码的\path{docs/validation/MAIN_SYNC_VALIDATION_2026-10-20.json}，含312份运行时源文件的SHA-256（Secure Hash Algorithm 256-bit）、三平台回归结果、离线检测评测结果与退出码；清单由\path{tools/build_report_binding.py}按一条固定规则从git对象重算，便于复核。历史M25结果见\path{docs/validation/M25_LOCAL_ACCEPTANCE_2026-10-18.json}。摘要清单用于核对文件一致性，不能替代原始观察。
 
 开发端使用Python 3.12和锁定依赖，前端执行Vue类型检查与生产构建。M24容器环境为Linux/aarch64、Python 3.12.14、Git 2.47.3；宿主为Docker Desktop。各平台记录只在其自身范围内解释。
 
@@ -16,7 +16,7 @@
 结论 & 关键观察 & 证据 & 出处\\\midrule
 同一提交三平台一致 & 1107 / 1106 / 1107项通过，退出码0 & E1 & \ref{sec:env}节、表\ref{tab:engineering}\\
 授权约束进入真实工具链 & 48单元中46项业务完成，2个危险写入被拦 & E2 & \ref{sec:offline}节、表\ref{tab:offline}\\
-规则初筛可复现 & 42条TP21/FN0/FP0/TN21；140条查准1.00、查全0.5625 & E3 & \ref{sec:detection}节、表\ref{tab:detection}\\
+规则初筛可复现 & 42条TP（True Positive）21/FN（False Negative）0/FP（False Positive）0/TN（True Negative）21；140条查准1.00、查全0.5625 & E3 & \ref{sec:detection}节、表\ref{tab:detection}\\
 四业务确定性复现 & 16/16完成，云调用0 & E4 & \ref{sec:detection}节末\\
 报告与源码同版本 & 312份源码哈希一致 & E5 & \ref{sec:env}节\\\bottomrule
 \end{tabularx}
@@ -43,7 +43,7 @@ M24 Linux六链 & 六候选各一实例完成，容器退出码0，主机独立�
 \end{tabularx}
 \end{table}
 
-三平台的通过数一致或接近（Windows多一次跳过），说明当前测试夹具不依赖单一操作系统；此前在macOS上因临时目录符号链接导致的路径别名拒绝已被夹具修复。M24容器使用UID/GID 10001、只读rootfs、\texttt{--network none}、CapDrop ALL、no-new-privileges、pids与内存限额及指定tmpfs；观测到CapEff为0、NoNewPrivs为1、rootfs写探针返回EROFS，仅loopback处于UP且无可用默认路由。该记录验证六候选有限链路的运行约束，未测量完整矩阵的隔离或吞吐开销。
+三平台的通过数一致或接近（Windows多一次跳过），说明当前测试夹具不依赖单一操作系统；此前在macOS上因临时目录符号链接导致的路径别名拒绝已被夹具修复。M24容器使用UID/GID（Group Identifier） 10001、只读rootfs、\texttt{--network none}、CapDrop ALL、no-new-privileges、pids与内存限额及指定tmpfs；观测到CapEff为0、NoNewPrivs为1、rootfs写探针返回EROFS，仅loopback处于UP且无可用默认路由。该记录验证六候选有限链路的运行约束，未测量完整矩阵的隔离或吞吐开销。
 
 \section{规则检测离线评测}\label{sec:detection}
 检测评测全部离线运行，无云调用；每次输出都记录数据集哈希与检测器版本，脚本拒绝覆盖已有输出。评测对象是规则初筛的分类表现，不执行真实工具链，也不涉及模型诱导提议。
@@ -94,9 +94,9 @@ M20引用核验 & 脚本主流程加一次云分析 & 1请求，353 tokens\\\bot
 \end{tabularx}
 \end{table}
 
-这些结果用于检查模型接入和业务可行性；跨版本修复不合并成功率。当前真实云CLI关闭，新的真实模型协议、资源准入、未见输入、重复规则和任务层统计需预登记后执行。无危险动作提议的格不能归因为网关阻断；只有交接文档记载、原始运行目录不在仓库的结果，只能按“开发期记录”引用。
+这些结果用于检查模型接入和业务可行性；跨版本修复不合并成功率。当前真实云CLI（Command-Line Interface）关闭，新的真实模型协议、资源准入、未见输入、重复规则和任务层统计需预登记后执行。无危险动作提议的格不能归因为网关阻断；只有交接文档记载、原始运行目录不在仓库的结果，只能按“开发期记录”引用。
 
 \section{结果分析与未完成验证}
 现有结果支持四类具体结论：第一，任务与来源用途约束已进入真实工具链，并能在部分Git与标记写入校准中形成可观察差异；第二，委派、Memory和危险原文引用具有实际角色、版本、内容和业务事实见证；第三，审批对象与实际提交参数可核对，敏感写入目标在放宽授权下仍被拒绝；第四，同一提交在三个平台的全量回归一致通过，说明当前工程记录可跨环境复核。四业务确定性运行与规则检测评测均可离线重算。
 
-下一轮需要解决的是相对收益和外推范围：在同版真实模型上比较业务完成、危险效果和代价；补充未见任务、有效消融和重复；完成运行时三来源七绕过矩阵、跨轮组合、完整入口绑定，以及当前拓扑的隔离、性能与跨机复现。暂不填写无数据支撑的正式ASR、提升比例或性能达标值。
+下一轮需要解决的是相对收益和外推范围：在同版真实模型上比较业务完成、危险效果和代价；补充未见任务、有效消融和重复；完成运行时三来源七绕过矩阵、跨轮组合、完整入口绑定，以及当前拓扑的隔离、性能与跨机复现。暂不填写无数据支撑的正式ASR（Attack Success Rate）、提升比例或性能达标值。
