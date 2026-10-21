@@ -134,7 +134,7 @@ def main() -> int:
             "- `runs/<dir>/*-export.json`：各用例运行导出（来源与工具轨迹）。",
             "- `runs/<dir>/runtime-sources.json`：运行时源码快照索引。",
             "- `runs/validation/*.json`：项目验证记录（M25/M26 本地验收、主线能力审计）。",
-            "- `logs/`：控制台复现日志。",
+            *(["- `logs/`：控制台复现日志。"] if args.log else []),
             "",
         ]
         if args.note:
