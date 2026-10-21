@@ -1855,7 +1855,9 @@ class M1Gateway:
     ) -> tuple[str, ...]:
         """Register and scan a result; raise ResultScanRejected if any text is unscannable."""
         snapshot = snapshot or snapshot_tool_result(data)
-        documents = self._record_document_results(tool, snapshot, action, executed_event, expose=expose)
+        documents = self._record_document_results(
+            tool, snapshot, action, executed_event, expose=expose
+        )
         effect = action.to_dict()["effect"]
         actor = self.grant.to_dict()["subject_id"]
         if tool in {"memory.read", "memory.write"} and self.memory_policy is not None:
