@@ -19,8 +19,24 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-INCLUDE_TOP = ["sujie", "competition", "docs", "artifacts"]
-INCLUDE_FILES = ["README.md", "LICENSE", "CONTRIBUTING.md", "SECURITY.md", ".env.example"]
+INCLUDE_DIRS = [
+    "sujie",
+    "competition/submission/latex",
+    "docs/validation",
+]
+# Deliberately flat: only material a reviewer needs to build, run and audit the work.
+INCLUDE_FILES = [
+    "competition/submission/部署说明-溯界.md",
+    "competition/submission/测试样例与流程说明-溯界.md",
+    "docs/ARCHITECTURE.md",
+    "docs/SECURITY_MODEL.md",
+    "docs/THREAT_MODEL.md",
+    "LICENSE",
+    "SECURITY.md",
+    ".env.example",
+]
+# Authoring notes for the LaTeX project reference internal tooling; the package README covers usage.
+EXCLUDE_FILES = {"competition/submission/latex/README.md"}
 
 EXCLUDE_DIRS = {
     ".git", ".venv", "venv", "node_modules", "__pycache__", ".pytest_cache", ".ruff_cache",
@@ -73,7 +89,9 @@ def sha256(path: Path) -> str:
 
 
 def is_excluded(rel: Path) -> bool:
-    if any(part in EXCLUDE_DIRS for part in rel.parts):
+    if any(part in EXCLUDE_DIRS or part.endswith(".egg-info") for part in rel.parts):
+        return True
+    if rel.as_posix() in EXCLUDE_FILES:
         return True
     if rel.name in ("",) or rel.name.startswith(".") and rel.name not in (".env.example", ".gitignore", ".gitattributes"):
         return True
@@ -98,7 +116,7 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
 
     files: list[tuple[Path, str]] = []
-    for top in INCLUDE_TOP:
+    for top in INCLUDE_DIRS:
         base = root / top
         if not base.is_dir():
             continue
@@ -129,14 +147,43 @@ def main() -> int:
             zf.write(path, arc)
             manifest.append({"path": arc, "bytes": path.stat().st_size, "sha256": sha256(path)})
         zf.writestr("PACKAGE_README.md", "\n".join([
-            "# 溯界（Sujie）提交源码包",
+            "# 溯界（Sujie）——面向大模型智能体的运行时安全网关",
             "",
-            f"- 生成时间（UTC）：{datetime.now(timezone.utc).isoformat(timespec='seconds')}",
-            "- 安装、启动与复现步骤见 `competition/submission/部署说明-溯界.md`。",
-            "- 快速入口：`cd sujie && python3 -m venv .venv && .venv/bin/python -m pip install -r requirements.lock`，"
-            "随后 `.venv/bin/python dev.py demo` / `dev.py console` / `dev.py check`。",
-            "- 本包**不含**虚拟环境、依赖缓存、模型缓存、本地运行状态、预算账本、任何凭据与原始评测运行记录。",
-            "- 原始评测运行记录另行以脱敏证据包移交。",
+            "本包为参赛作品「可执行程序」提交件，包含运行时源码、策略与测试、离线评测脚本、报告 LaTeX 源码与验证记录。",
+            "",
+            "## 目录",
+            "",
+            "| 路径 | 内容 |",
+            "|---|---|",
+            "| `sujie/` | 运行时：可信 Host 与模型循环、网关、控制面、策略 DSL、MCP 适配、测试与离线评测脚本 |",
+            "| `competition/submission/latex/` | 作品报告 LaTeX 源码（五章正文、矢量图、参考文献） |",
+            "| `competition/submission/部署说明-溯界.md` | 安装、启动与复现步骤（与随附 PDF 同源） |",
+            "| `competition/submission/测试样例与流程说明-溯界.md` | 测试分层、样例组成与判定口径 |",
+            "| `docs/ARCHITECTURE.md`、`docs/SECURITY_MODEL.md`、`docs/THREAT_MODEL.md` | 架构、安全模型与威胁模型 |",
+            "| `docs/validation/` | 基线验证记录与三平台回归结果 |",
+            "| `PACKAGE_MANIFEST.json` | 本包逐文件 SHA-256 清单 |",
+            "",
+            "## 快速开始",
+            "",
+            "```sh",
+            "cd sujie",
+            "python3 -m venv .venv",
+            ".venv/bin/python -m pip install -r requirements.lock",
+            ".venv/bin/python dev.py demo      # 确定性演示",
+            ".venv/bin/python dev.py console   # 操作台 http://127.0.0.1:8765",
+            ".venv/bin/python dev.py check     # lint + 全量回归",
+            "```",
+            "",
+            "- Python 3.12.x；Node.js 20.19+ 或 22.12+ 仅前端控制台构建需要。",
+            "- 离线检测复现：`dev.py eval-detection`、`dev.py eval-bypass`、`eval/run_public_injection.py`。",
+            "- 规则检测指标为离线初筛结果，不是 Agent ASR，也不是网关实际阻断率。",
+            "",
+            "## 包内容说明",
+            "",
+            "本包不含虚拟环境、依赖缓存、模型缓存、本地运行状态、预算账本、任何凭据与原始评测运行记录；"
+            "原始运行记录以脱敏证据包另行提交。",
+            "",
+            f"生成时间（UTC）：{datetime.now(timezone.utc).isoformat(timespec='seconds')}",
             "",
         ]))
         zf.writestr("PACKAGE_MANIFEST.json", json.dumps(
